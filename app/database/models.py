@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, DateTime, func, Enum
+from sqlalchemy import Column, Integer, String, DateTime, func, Enum, ForeignKey
+from sqlalchemy.orm import relationship
 from .database import Base
 import enum
 
@@ -61,3 +62,85 @@ class Supplier(Base):
     phone = Column(String)
     address = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SalesOrder(Base):
+    """
+    SalesOrder model for tracking sales.
+    """
+    __tablename__ = "sales_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+    total_amount = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    customer = relationship("Customer")
+    items = relationship("SalesOrderItem", back_populates="order")
+
+
+class SalesOrderItem(Base):
+    """
+    SalesOrderItem model for individual items in a sales order.
+    """
+    __tablename__ = "sales_order_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("sales_orders.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    price_per_unit = Column(Integer, nullable=False)
+
+    order = relationship("SalesOrder", back_populates="items")
+    product = relationship("Product")
+
+
+class PurchaseOrder(Base):
+    """
+    PurchaseOrder model for tracking purchases.
+    """
+    __tablename__ = "purchase_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=False)
+    total_amount = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    supplier = relationship("Supplier")
+    items = relationship("PurchaseOrderItem", back_populates="order")
+
+
+class PurchaseOrderItem(Base):
+    """
+    PurchaseOrderItem model for individual items in a purchase order.
+    """
+    __tablename__ = "purchase_order_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    price_per_unit = Column(Integer, nullable=False)
+
+    order = relationship("PurchaseOrder", back_populates="items")
+    product = relationship("Product")
+
+
+class TransactionType(enum.Enum):
+    SALE = "sale"
+    PURCHASE = "purchase"
+
+
+class LedgerTransaction(Base):
+    """
+    LedgerTransaction model for financial accounting.
+    """
+    __tablename__ = "ledger_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    transaction_type = Column(Enum(TransactionType), nullable=False)
+    amount = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Polymorphic relationship to link to either SalesOrder or PurchaseOrder
+    related_order_id = Column(Integer)
+    related_order_type = Column(String)

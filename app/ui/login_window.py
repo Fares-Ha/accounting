@@ -1,4 +1,4 @@
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QCoreApplication
 from PyQt6.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QMessageBox
 from app.core.auth import authenticate_user
 from app.database.database import SessionLocal
@@ -12,22 +12,22 @@ class LoginWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Login")
+        self.setWindowTitle(self.tr("Login"))
 
         layout = QVBoxLayout()
 
-        self.username_label = QLabel("Username:")
+        self.username_label = QLabel(self.tr("Username:"))
         self.username_input = QLineEdit()
         layout.addWidget(self.username_label)
         layout.addWidget(self.username_input)
 
-        self.password_label = QLabel("Password:")
+        self.password_label = QLabel(self.tr("Password:"))
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         layout.addWidget(self.password_label)
         layout.addWidget(self.password_input)
 
-        self.login_button = QPushButton("Login")
+        self.login_button = QPushButton(self.tr("Login"))
         self.login_button.clicked.connect(self.handle_login)
         layout.addWidget(self.login_button)
 
@@ -44,4 +44,4 @@ class LoginWindow(QWidget):
             self.login_successful.emit(user)
             self.close()
         else:
-            QMessageBox.warning(self, "Login Failed", "Invalid username or password.")
+            QMessageBox.warning(self, self.tr("Login Failed"), self.tr("Invalid username or password."))

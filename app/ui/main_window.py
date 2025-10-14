@@ -1,6 +1,12 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel
+from PyQt6.QtCore import QCoreApplication
 from .customer_widget import CustomerWidget
 from .supplier_widget import SupplierWidget
+from .product_widget import ProductWidget
+from .sales_widget import SalesWidget
+from .purchase_widget import PurchaseWidget
+from .ledger_widget import LedgerWidget
+from ..database.models import UserRole
 
 class MainWindow(QMainWindow):
     """
@@ -9,7 +15,7 @@ class MainWindow(QMainWindow):
     def __init__(self, user):
         super().__init__()
         self.user = user
-        self.setWindowTitle(f"Al Ameen - Logged in as {self.user.username} ({self.user.role.value})")
+        self.setWindowTitle(self.tr("Al Ameen - Logged in as {} ({})").format(self.user.username, self.user.role.value))
         self.setMinimumSize(800, 600)
 
         # Create the tab widget and set it as the central widget
@@ -18,12 +24,26 @@ class MainWindow(QMainWindow):
 
         # Add the customer management widget
         self.customer_widget = CustomerWidget()
-        self.tabs.addTab(self.customer_widget, "Customers")
+        self.tabs.addTab(self.customer_widget, self.tr("Customers"))
 
         # Add the supplier management widget
         self.supplier_widget = SupplierWidget()
-        self.tabs.addTab(self.supplier_widget, "Suppliers")
+        self.tabs.addTab(self.supplier_widget, self.tr("Suppliers"))
 
-        # Add placeholder tabs for the other main modules
-        self.tabs.addTab(QLabel("Products content will go here"), "Products")
-        self.tabs.addTab(QLabel("Sales content will go here"), "Sales")
+        # Add the product management widget
+        self.product_widget = ProductWidget()
+        self.tabs.addTab(self.product_widget, self.tr("Products"))
+
+        # Add the sales management widget
+        self.sales_widget = SalesWidget()
+        self.tabs.addTab(self.sales_widget, self.tr("Sales"))
+
+        # Add the purchase management widget - Admin and Accountant only
+        if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
+            self.purchase_widget = PurchaseWidget()
+            self.tabs.addTab(self.purchase_widget, self.tr("Purchases"))
+
+        # Add the ledger widget - Admin and Accountant only
+        if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
+            self.ledger_widget = LedgerWidget()
+            self.tabs.addTab(self.ledger_widget, self.tr("Ledger"))

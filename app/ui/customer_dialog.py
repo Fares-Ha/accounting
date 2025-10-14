@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QPushButton, QFormLayout, QLabel, QHBoxLayout
+from PyQt6.QtCore import QCoreApplication
 from app.core.customer_service import create_customer, update_customer, get_db
 
 class CustomerDialog(QDialog):
@@ -10,9 +11,9 @@ class CustomerDialog(QDialog):
 
         self.customer = customer
         if self.customer:
-            self.setWindowTitle("Edit Customer")
+            self.setWindowTitle(self.tr("Edit Customer"))
         else:
-            self.setWindowTitle("Add Customer")
+            self.setWindowTitle(self.tr("Add Customer"))
 
         layout = QVBoxLayout(self)
         form_layout = QFormLayout()
@@ -22,16 +23,16 @@ class CustomerDialog(QDialog):
         self.phone_input = QLineEdit(self.customer.phone if self.customer else "")
         self.address_input = QLineEdit(self.customer.address if self.customer else "")
 
-        form_layout.addRow(QLabel("Name:"), self.name_input)
-        form_layout.addRow(QLabel("Email:"), self.email_input)
-        form_layout.addRow(QLabel("Phone:"), self.phone_input)
-        form_layout.addRow(QLabel("Address:"), self.address_input)
+        form_layout.addRow(QLabel(self.tr("Name:")), self.name_input)
+        form_layout.addRow(QLabel(self.tr("Email:")), self.email_input)
+        form_layout.addRow(QLabel(self.tr("Phone:")), self.phone_input)
+        form_layout.addRow(QLabel(self.tr("Address:")), self.address_input)
 
         layout.addLayout(form_layout)
 
         # Add Save and Cancel buttons
-        self.save_button = QPushButton("Save")
-        self.cancel_button = QPushButton("Cancel")
+        self.save_button = QPushButton(self.tr("Save"))
+        self.cancel_button = QPushButton(self.tr("Cancel"))
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.save_button)
