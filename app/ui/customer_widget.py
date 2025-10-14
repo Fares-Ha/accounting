@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableView, QHBoxLayout, QMessageBox
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
+from PyQt6.QtCore import QCoreApplication
 from app.core.customer_service import get_customers, delete_customer, get_customer_by_id, get_db
 from .customer_dialog import CustomerDialog
 
@@ -14,9 +15,9 @@ class CustomerWidget(QWidget):
 
         # Create a horizontal layout for the buttons
         button_layout = QHBoxLayout()
-        self.add_button = QPushButton("Add Customer")
-        self.edit_button = QPushButton("Edit Customer")
-        self.delete_button = QPushButton("Delete Customer")
+        self.add_button = QPushButton(self.tr("Add Customer"))
+        self.edit_button = QPushButton(self.tr("Edit Customer"))
+        self.delete_button = QPushButton(self.tr("Delete Customer"))
         button_layout.addWidget(self.add_button)
         button_layout.addWidget(self.edit_button)
         button_layout.addWidget(self.delete_button)
@@ -25,7 +26,7 @@ class CustomerWidget(QWidget):
         # Create the table view for displaying customers
         self.customer_table = QTableView()
         self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(['ID', 'Name', 'Email', 'Phone', 'Address'])
+        self.model.setHorizontalHeaderLabels([self.tr('ID'), self.tr('Name'), self.tr('Email'), self.tr('Phone'), self.tr('Address')])
         self.customer_table.setModel(self.model)
         self.customer_table.setColumnHidden(0, True) # Hide the ID column
         layout.addWidget(self.customer_table)
@@ -86,7 +87,7 @@ class CustomerWidget(QWidget):
             finally:
                 next(db_gen, None)
         else:
-            QMessageBox.warning(self, "No Customer Selected", "Please select a customer to edit.")
+            QMessageBox.warning(self, self.tr("No Customer Selected"), self.tr("Please select a customer to edit."))
 
 
     def delete_customer(self):
@@ -95,7 +96,7 @@ class CustomerWidget(QWidget):
         """
         selected_row = self.customer_table.currentIndex().row()
         if selected_row >= 0:
-            reply = QMessageBox.question(self, 'Delete Customer', 'Are you sure you want to delete this customer?',
+            reply = QMessageBox.question(self, self.tr('Delete Customer'), self.tr('Are you sure you want to delete this customer?'),
                                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
                 customer_id = int(self.model.item(selected_row, 0).text())
@@ -107,4 +108,4 @@ class CustomerWidget(QWidget):
                 finally:
                     next(db_gen, None)
         else:
-            QMessageBox.warning(self, "No Customer Selected", "Please select a customer to delete.")
+            QMessageBox.warning(self, self.tr("No Customer Selected"), self.tr("Please select a customer to delete."))

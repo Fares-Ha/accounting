@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableView, QHBoxLayout, QMessageBox
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
+from PyQt6.QtCore import QCoreApplication
 from app.core.supplier_service import get_suppliers, delete_supplier, get_supplier_by_id, get_db
 from .supplier_dialog import SupplierDialog
 
@@ -14,9 +15,9 @@ class SupplierWidget(QWidget):
 
         # Create a horizontal layout for the buttons
         button_layout = QHBoxLayout()
-        self.add_button = QPushButton("Add Supplier")
-        self.edit_button = QPushButton("Edit Supplier")
-        self.delete_button = QPushButton("Delete Supplier")
+        self.add_button = QPushButton(self.tr("Add Supplier"))
+        self.edit_button = QPushButton(self.tr("Edit Supplier"))
+        self.delete_button = QPushButton(self.tr("Delete Supplier"))
         button_layout.addWidget(self.add_button)
         button_layout.addWidget(self.edit_button)
         button_layout.addWidget(self.delete_button)
@@ -25,7 +26,7 @@ class SupplierWidget(QWidget):
         # Create the table view for displaying suppliers
         self.supplier_table = QTableView()
         self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(['ID', 'Name', 'Email', 'Phone', 'Address'])
+        self.model.setHorizontalHeaderLabels([self.tr('ID'), self.tr('Name'), self.tr('Email'), self.tr('Phone'), self.tr('Address')])
         self.supplier_table.setModel(self.model)
         self.supplier_table.setColumnHidden(0, True) # Hide the ID column
         layout.addWidget(self.supplier_table)
@@ -86,7 +87,7 @@ class SupplierWidget(QWidget):
             finally:
                 next(db_gen, None)
         else:
-            QMessageBox.warning(self, "No Supplier Selected", "Please select a supplier to edit.")
+            QMessageBox.warning(self, self.tr("No Supplier Selected"), self.tr("Please select a supplier to edit."))
 
 
     def delete_supplier(self):
@@ -95,7 +96,7 @@ class SupplierWidget(QWidget):
         """
         selected_row = self.supplier_table.currentIndex().row()
         if selected_row >= 0:
-            reply = QMessageBox.question(self, 'Delete Supplier', 'Are you sure you want to delete this supplier?',
+            reply = QMessageBox.question(self, self.tr('Delete Supplier'), self.tr('Are you sure you want to delete this supplier?'),
                                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
                 supplier_id = int(self.model.item(selected_row, 0).text())
@@ -107,4 +108,4 @@ class SupplierWidget(QWidget):
                 finally:
                     next(db_gen, None)
         else:
-            QMessageBox.warning(self, "No Supplier Selected", "Please select a supplier to delete.")
+            QMessageBox.warning(self, self.tr("No Supplier Selected"), self.tr("Please select a supplier to delete."))
