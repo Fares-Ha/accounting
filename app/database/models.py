@@ -47,3 +47,17 @@ class Product(Base):
     price = Column(Integer, nullable=False)  # Storing price in cents to avoid floating point issues
     stock_quantity = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Supplier(Base):
+    """
+    Supplier model to store supplier information.
+    """
+    __tablename__ = "suppliers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True)
+    phone = Column(String)
+    address = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
