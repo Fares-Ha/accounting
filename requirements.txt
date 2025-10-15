@@ -1,3 +1,5 @@
 PyQt6
 SQLAlchemy
 bcrypt
+reportlab
+openpyxl

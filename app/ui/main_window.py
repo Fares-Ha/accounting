@@ -7,6 +7,7 @@ from .category_widget import CategoryWidget
 from .sales_widget import SalesWidget
 from .purchase_widget import PurchaseWidget
 from .ledger_widget import LedgerWidget
+from .reporting_widget import ReportingWidget
 from ..database.models import UserRole
 
 class MainWindow(QMainWindow):
@@ -52,3 +53,8 @@ class MainWindow(QMainWindow):
         if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
             self.ledger_widget = LedgerWidget()
             self.tabs.addTab(self.ledger_widget, self.tr("Ledger"))
+
+        # Add the reporting widget - Admin and Accountant only
+        if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
+            self.reporting_widget = ReportingWidget()
+            self.tabs.addTab(self.reporting_widget, self.tr("Reporting"))
