@@ -64,6 +64,12 @@ class MainWindow(QMainWindow):
             self.purchase_widget = PurchaseOrderWidget()
             self.tabs.addTab(self.purchase_widget, self.tr("Purchases"))
 
+        # Add the invoicing widget - Admin and Accountant only
+        if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
+            from .invoice_widget import InvoiceWidget
+            self.invoice_widget = InvoiceWidget()
+            self.tabs.addTab(self.invoice_widget, self.tr("Invoicing"))
+
         # Add the Chart of Accounts widget - Admin and Accountant only
         if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
             self.chart_of_accounts_widget = ChartOfAccountsWidget()
