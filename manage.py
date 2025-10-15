@@ -18,7 +18,7 @@ def create_admin(args):
         db.close()
 
 def main():
-    parser = argparse.ArgumentParser(description="Management script for Al Ameen.")
+    parser = argparse.ArgumentParser(description="Management script for Ajyad Accountant.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Init DB command

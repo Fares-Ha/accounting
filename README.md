@@ -1,4 +1,4 @@
-# Al Ameen Desktop Application
+# Ajyad Accountant Desktop Application
 
 This is a full-featured, cross-platform desktop application for accounting, inventory, and customer management.
 
