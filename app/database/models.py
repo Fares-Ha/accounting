@@ -115,7 +115,7 @@ class SalesOrder(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     customer = relationship("Customer")
-    items = relationship("SalesOrderItem", back_populates="order")
+    items = relationship("SalesOrderItem", back_populates="order", cascade="all, delete-orphan")
 
 
 class SalesOrderItem(Base):
@@ -143,10 +143,11 @@ class PurchaseOrder(Base):
     id = Column(Integer, primary_key=True, index=True)
     supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=False)
     total_amount = Column(Integer, nullable=False)
+    status = Column(String, nullable=False, default="Pending")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     supplier = relationship("Supplier")
-    items = relationship("PurchaseOrderItem", back_populates="order")
+    items = relationship("PurchaseOrderItem", back_populates="order", cascade="all, delete-orphan")
 
 
 class PurchaseOrderItem(Base):
