@@ -9,7 +9,7 @@ def get_db():
     finally:
         db.close()
 
-def get_suppliers(db: Session):
+def get_all_suppliers(db: Session):
     """
     Retrieve all suppliers from the database.
     """

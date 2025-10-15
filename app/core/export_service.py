@@ -69,22 +69,21 @@ class ExportService:
     """
     Service for exporting data to different formats.
     """
+    def export_sales_report_to_pdf(self, sales_data, file_path):
+        headers = ["Product", "Total Quantity", "Total Revenue"]
+        data = [[item.name, str(item.total_quantity), f"{item.total_revenue / 100:.2f}"] for item in sales_data]
+        self.export_to_pdf(data, headers, file_path)
 
-    def export_to_excel(self, data, headers, parent_widget):
+    def export_sales_report_to_excel(self, sales_data, file_path):
+        headers = ["Product", "Total Quantity", "Total Revenue"]
+        data = [[item.name, item.total_quantity, item.total_revenue / 100] for item in sales_data]
+        self.export_to_excel(data, headers, file_path)
+
+    def export_to_excel(self, data, headers, file_path):
         """
         Exports data to an Excel file.
         """
         if not data:
-            return
-
-        file_path, _ = QFileDialog.getSaveFileName(
-            parent_widget,
-            "Save Excel File",
-            f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            "Excel Files (*.xlsx)"
-        )
-
-        if not file_path:
             return
 
         workbook = openpyxl.Workbook()
@@ -96,21 +95,11 @@ class ExportService:
 
         workbook.save(file_path)
 
-    def export_to_pdf(self, data, headers, parent_widget):
+    def export_to_pdf(self, data, headers, file_path):
         """
         Exports data to a PDF file.
         """
         if not data:
-            return
-
-        file_path, _ = QFileDialog.getSaveFileName(
-            parent_widget,
-            "Save PDF File",
-            f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-            "PDF Files (*.pdf)"
-        )
-
-        if not file_path:
             return
 
         doc = SimpleDocTemplate(file_path, pagesize=letter)

@@ -91,3 +91,11 @@ def get_inventory_movements(db: Session, product_id: int):
     Retrieves all inventory movements for a given product.
     """
     return db.query(models.InventoryMovement).filter(models.InventoryMovement.product_id == product_id).order_by(models.InventoryMovement.created_at.desc()).all()
+
+def adjust_stock(db: Session, product_id: int, quantity_change: int, reason: models.InventoryMovementReason):
+    product = get_product(db, product_id)
+    if not product:
+        return None
+
+    adjust_stock_quantity(db, product, quantity_change, reason)
+    return product

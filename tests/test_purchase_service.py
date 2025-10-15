@@ -39,12 +39,12 @@ class TestPurchaseService(unittest.TestCase):
         self.assertEqual(len(journal_entry.transactions), 2)
 
 
-    def test_get_purchase_orders(self):
+    def test_get_all_purchase_orders(self):
         items = [{"product_id": self.product1.id, "quantity": 10, "price_per_unit": 8.0}]
         purchase_service.create_purchase_order(self.session, self.supplier.id, items)
         purchase_service.create_purchase_order(self.session, self.supplier.id, items)
 
-        orders = purchase_service.get_purchase_orders(self.session)
+        orders = purchase_service.get_all_purchase_orders(self.session)
         self.assertEqual(len(orders), 2)
 
     def test_update_purchase_order(self):

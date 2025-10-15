@@ -1,5 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableView, QHBoxLayout, QMessageBox
-from PyQt6.QtGui import QStandardItemModel, QStandardItem
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QHBoxLayout, QMessageBox, QHeaderView
 from PyQt6.QtCore import QCoreApplication
 from app.core.customer_service import get_customers, delete_customer, get_customer_by_id, get_db
 from .customer_dialog import CustomerDialog
@@ -24,10 +23,11 @@ class CustomerWidget(QWidget):
         layout.addLayout(button_layout)
 
         # Create the table view for displaying customers
-        self.customer_table = QTableView()
-        self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels([self.tr('ID'), self.tr('Name'), self.tr('Email'), self.tr('Phone'), self.tr('Address')])
-        self.customer_table.setModel(self.model)
+        self.customer_table = QTableWidget()
+        self.customer_table.setColumnCount(5)
+        self.customer_table.setHorizontalHeaderLabels([self.tr('ID'), self.tr('Name'), self.tr('Email'), self.tr('Phone'), self.tr('Address')])
+        self.customer_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.customer_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.customer_table.setColumnHidden(0, True) # Hide the ID column
         layout.addWidget(self.customer_table)
 
@@ -44,20 +44,17 @@ class CustomerWidget(QWidget):
         """
         Load customers from the database and display them in the table.
         """
-        self.model.removeRows(0, self.model.rowCount())
         db_gen = get_db()
         db = next(db_gen)
         try:
             customers = get_customers(db)
-            for customer in customers:
-                row = [
-                    QStandardItem(str(customer.id)),
-                    QStandardItem(customer.name),
-                    QStandardItem(customer.email),
-                    QStandardItem(customer.phone),
-                    QStandardItem(customer.address)
-                ]
-                self.model.appendRow(row)
+            self.customer_table.setRowCount(len(customers))
+            for row, customer in enumerate(customers):
+                self.customer_table.setItem(row, 0, QTableWidgetItem(str(customer.id)))
+                self.customer_table.setItem(row, 1, QTableWidgetItem(customer.name))
+                self.customer_table.setItem(row, 2, QTableWidgetItem(customer.email))
+                self.customer_table.setItem(row, 3, QTableWidgetItem(customer.phone))
+                self.customer_table.setItem(row, 4, QTableWidgetItem(customer.address))
         finally:
             next(db_gen, None)
 
@@ -73,9 +70,10 @@ class CustomerWidget(QWidget):
         """
         Open a dialog to edit the selected customer.
         """
-        selected_row = self.customer_table.currentIndex().row()
-        if selected_row >= 0:
-            customer_id = int(self.model.item(selected_row, 0).text())
+        selected_rows = self.customer_table.selectionModel().selectedRows()
+        if selected_rows:
+            selected_row = selected_rows[0].row()
+            customer_id = int(self.customer_table.item(selected_row, 0).text())
             db_gen = get_db()
             db = next(db_gen)
             try:
@@ -94,12 +92,13 @@ class CustomerWidget(QWidget):
         """
         Delete the selected customer.
         """
-        selected_row = self.customer_table.currentIndex().row()
-        if selected_row >= 0:
+        selected_rows = self.customer_table.selectionModel().selectedRows()
+        if selected_rows:
             reply = QMessageBox.question(self, self.tr('Delete Customer'), self.tr('Are you sure you want to delete this customer?'),
                                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                customer_id = int(self.model.item(selected_row, 0).text())
+                selected_row = selected_rows[0].row()
+                customer_id = int(self.customer_table.item(selected_row, 0).text())
                 db_gen = get_db()
                 db = next(db_gen)
                 try:
