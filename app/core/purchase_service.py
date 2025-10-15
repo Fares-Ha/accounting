@@ -28,13 +28,20 @@ def create_purchase_order(db: Session, supplier_id: int, items: list[dict]):
     db.commit()
     db.refresh(db_order)
 
-    # Create a corresponding ledger transaction
-    accounting_service.create_ledger_transaction(
-        db,
-        amount=total_amount,
-        transaction_type=models.TransactionType.PURCHASE,
-        related_order_id=db_order.id
-    )
+    # Create a journal entry for the purchase
+    purchases_account = db.query(models.Account).filter(models.Account.name == "Purchases").first()
+    if not purchases_account:
+        purchases_account = accounting_service.create_account(db, "Purchases", models.AccountType.EXPENSE)
+
+    cash_account = db.query(models.Account).filter(models.Account.name == "Cash").first()
+    if not cash_account:
+        cash_account = accounting_service.create_account(db, "Cash", models.AccountType.ASSET)
+
+    transactions = [
+        {"account_id": purchases_account.id, "amount": total_amount},
+        {"account_id": cash_account.id, "amount": -total_amount},
+    ]
+    accounting_service.create_journal_entry(db, f"Purchase Order #{db_order.id}", transactions)
 
     return db_order
 
@@ -78,14 +85,6 @@ def update_purchase_order(db: Session, order_id: int, supplier_id: int, items: l
     order.total_amount = total_amount
     order.items = order_items
 
-    # Update ledger
-    ledger_entry = db.query(models.LedgerTransaction).filter(
-        models.LedgerTransaction.related_order_id == order_id,
-        models.LedgerTransaction.transaction_type == models.TransactionType.PURCHASE
-    ).first()
-    if ledger_entry:
-        ledger_entry.amount = total_amount
-
     db.commit()
     db.refresh(order)
     return order
@@ -98,14 +97,6 @@ def delete_purchase_order(db: Session, order_id: int):
     order = get_purchase_order(db, order_id)
     if not order:
         raise ValueError(f"Purchase order with ID {order_id} not found.")
-
-    # Delete the corresponding ledger transaction
-    ledger_entry = db.query(models.LedgerTransaction).filter(
-        models.LedgerTransaction.related_order_id == order_id,
-        models.LedgerTransaction.transaction_type == models.TransactionType.PURCHASE
-    ).first()
-    if ledger_entry:
-        db.delete(ledger_entry)
 
     db.delete(order)
     db.commit()

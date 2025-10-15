@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from ..database.models import SalesOrder, SalesOrderItem, Product
+from ..database.models import SalesOrder, SalesOrderItem, Product, Account, AccountType
 from sqlalchemy import func
 from datetime import datetime
 
@@ -41,3 +41,36 @@ class ReportingService:
             .all()
         )
         return inventory_data
+
+    def get_profit_and_loss_statement(self, db: Session):
+        """
+        Generates a Profit & Loss statement.
+
+        The Profit & Loss statement shows the company's financial performance
+        over a specific period of time. It is calculated by subtracting
+        expenses from revenues.
+
+        Returns:
+            A dictionary containing the total revenue, total expenses, and
+            net profit.
+        """
+        revenue = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.REVENUE).scalar() or 0
+        expenses = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.EXPENSE).scalar() or 0
+        return {"revenue": revenue, "expenses": expenses, "net_profit": revenue - expenses}
+
+    def get_balance_sheet(self, db: Session):
+        """
+        Generates a Balance Sheet.
+
+        The Balance Sheet provides a snapshot of the company's financial
+        position at a specific point in time. It is based on the
+        accounting equation: Assets = Liabilities + Equity.
+
+        Returns:
+            A dictionary containing the total assets, total liabilities, and
+            total equity.
+        """
+        assets = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.ASSET).scalar() or 0
+        liabilities = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.LIABILITY).scalar() or 0
+        equity = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.EQUITY).scalar() or 0
+        return {"assets": assets, "liabilities": liabilities, "equity": equity}

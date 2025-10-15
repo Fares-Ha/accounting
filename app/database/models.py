@@ -166,21 +166,52 @@ class PurchaseOrderItem(Base):
     product = relationship("Product")
 
 
-class TransactionType(enum.Enum):
-    SALE = "sale"
-    PURCHASE = "purchase"
+class AccountType(enum.Enum):
+    ASSET = "asset"
+    LIABILITY = "liability"
+    EQUITY = "equity"
+    REVENUE = "revenue"
+    EXPENSE = "expense"
 
 
-class LedgerTransaction(Base):
+class Account(Base):
     """
-    LedgerTransaction model for financial accounting.
+    Account model for the chart of accounts.
     """
-    __tablename__ = "ledger_transactions"
+    __tablename__ = "accounts"
 
     id = Column(Integer, primary_key=True, index=True)
-    transaction_type = Column(Enum(TransactionType), nullable=False)
-    amount = Column(Integer, nullable=False)
+    name = Column(String, nullable=False, unique=True, index=True)
+    account_type = Column(Enum(AccountType), nullable=False)
+    balance = Column(Integer, nullable=False, default=0) # Stored in cents
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    # Polymorphic relationship to link to either SalesOrder or PurchaseOrder
-    related_order_id = Column(Integer)
-    related_order_type = Column(String)
+
+
+class JournalEntry(Base):
+    """
+    JournalEntry model for double-entry bookkeeping.
+    """
+    __tablename__ = "journal_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(DateTime(timezone=True), nullable=False)
+    description = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    transactions = relationship("Transaction", back_populates="journal_entry", cascade="all, delete-orphan")
+
+
+class Transaction(Base):
+    """
+    Transaction model representing a single debit or credit.
+    """
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    journal_entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=False)
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+    amount = Column(Integer, nullable=False)  # Positive for debit, negative for credit
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    journal_entry = relationship("JournalEntry", back_populates="transactions")
+    account = relationship("Account")

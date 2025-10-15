@@ -8,6 +8,8 @@ from .sales_widget import SalesWidget
 from .purchase_widget import PurchaseWidget
 from .ledger_widget import LedgerWidget
 from .reporting_widget import ReportingWidget
+from .chart_of_accounts_widget import ChartOfAccountsWidget
+from .notification_widget import NotificationWidget
 from ..database.models import UserRole
 
 class MainWindow(QMainWindow):
@@ -49,12 +51,21 @@ class MainWindow(QMainWindow):
             self.purchase_widget = PurchaseWidget()
             self.tabs.addTab(self.purchase_widget, self.tr("Purchases"))
 
+        # Add the Chart of Accounts widget - Admin and Accountant only
+        if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
+            self.chart_of_accounts_widget = ChartOfAccountsWidget()
+            self.tabs.addTab(self.chart_of_accounts_widget, self.tr("Chart of Accounts"))
+
         # Add the ledger widget - Admin and Accountant only
         if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
             self.ledger_widget = LedgerWidget()
-            self.tabs.addTab(self.ledger_widget, self.tr("Ledger"))
+            self.tabs.addTab(self.ledger_widget, self.tr("Journal Entries"))
 
         # Add the reporting widget - Admin and Accountant only
         if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
             self.reporting_widget = ReportingWidget()
             self.tabs.addTab(self.reporting_widget, self.tr("Reporting"))
+
+        # Add the notification widget
+        self.notification_widget = NotificationWidget()
+        self.tabs.addTab(self.notification_widget, self.tr("Notifications"))
