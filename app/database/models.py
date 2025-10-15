@@ -59,10 +59,34 @@ class Product(Base):
     description = Column(String)
     price = Column(Integer, nullable=False)  # Storing price in cents to avoid floating point issues
     stock_quantity = Column(Integer, nullable=False, default=0)
+    low_stock_threshold = Column(Integer, nullable=False, default=0)
     category_id = Column(Integer, ForeignKey("product_categories.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     category = relationship("ProductCategory", back_populates="products")
+    inventory_movements = relationship("InventoryMovement", back_populates="product")
+
+
+class InventoryMovementReason(enum.Enum):
+    MANUAL_UPDATE = "manual_update"
+    SALE = "sale"
+    PURCHASE = "purchase"
+    INITIAL_STOCK = "initial_stock"
+
+
+class InventoryMovement(Base):
+    """
+    InventoryMovement model to audit stock changes.
+    """
+    __tablename__ = "inventory_movements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity_change = Column(Integer, nullable=False)
+    reason = Column(Enum(InventoryMovementReason), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    product = relationship("Product", back_populates="inventory_movements")
 
 
 class Supplier(Base):
