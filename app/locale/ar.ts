@@ -39,7 +39,7 @@
     <name>MainWindow</name>
     <message>
         <location filename="../../ui/main_window.py" line="15"/>
-        <source>Al Ameen - Logged in as {} ({})</source>
+        <source>Ajyad Accountant - Logged in as {} ({})</source>
         <translation>الأمين - تسجيل الدخول باسم {} ({})</translation>
     </message>
     <message>

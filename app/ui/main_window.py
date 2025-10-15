@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
     def __init__(self, user):
         super().__init__()
         self.user = user
-        self.setWindowTitle(self.tr("Al Ameen - Logged in as {} ({})").format(self.user.username, self.user.role.value))
+        self.setWindowTitle(self.tr("Ajyad Accountant - Logged in as {} ({})").format(self.user.username, self.user.role.value))
         self.setMinimumSize(800, 600)
 
         # Create the tab widget and set it as the central widget
