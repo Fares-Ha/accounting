@@ -108,3 +108,13 @@ class CustomerWidget(QWidget):
                     next(db_gen, None)
         else:
             QMessageBox.warning(self, self.tr("No Customer Selected"), self.tr("Please select a customer to delete."))
+
+    def select_customer(self, customer_id):
+        """
+        Selects a customer in the table by their ID.
+        """
+        for row in range(self.customer_table.rowCount()):
+            item = self.customer_table.item(row, 0)
+            if item and int(item.text()) == customer_id:
+                self.customer_table.selectRow(row)
+                break

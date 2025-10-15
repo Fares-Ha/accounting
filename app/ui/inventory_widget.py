@@ -192,3 +192,13 @@ from .stock_adjustment_dialog import StockAdjustmentDialog
         dialog = StockAdjustmentDialog(product_id, product_name)
         if dialog.exec():
             self.load_products()
+
+    def select_product(self, product_id):
+        """
+        Selects a product in the table by its ID.
+        """
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item and int(item.text()) == product_id:
+                self.table.selectRow(row)
+                break

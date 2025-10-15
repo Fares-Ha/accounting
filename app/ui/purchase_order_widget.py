@@ -222,6 +222,16 @@ class PurchaseOrderWidget(QWidget):
             except ValueError as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))
 
+    def select_order(self, order_id):
+        """
+        Selects an order in the table by its ID.
+        """
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item and int(item.text()) == order_id:
+                self.table.selectRow(row)
+                break
+
     def receive_order(self, row_num):
         order_id = int(self.table.item(row_num, 0).text())
         reply = QMessageBox.question(self, self.tr("Confirm Reception"),
