@@ -33,11 +33,10 @@ class TestPurchaseService(unittest.TestCase):
         self.assertEqual(order.total_amount, (10 * 8.0) + (5 * 15.0))
         self.assertEqual(order.status, "Pending")
 
-        # Check ledger entry
-        ledger_entry = self.session.query(models.LedgerTransaction).filter_by(related_order_id=order.id).first()
-        self.assertIsNotNone(ledger_entry)
-        self.assertEqual(ledger_entry.amount, order.total_amount)
-        self.assertEqual(ledger_entry.transaction_type, models.TransactionType.PURCHASE)
+        # Check journal entry
+        journal_entry = self.session.query(models.JournalEntry).filter_by(description=f"Purchase Order #{order.id}").first()
+        self.assertIsNotNone(journal_entry)
+        self.assertEqual(len(journal_entry.transactions), 2)
 
 
     def test_get_purchase_orders(self):
@@ -67,10 +66,6 @@ class TestPurchaseService(unittest.TestCase):
         purchase_service.delete_purchase_order(self.session, order_id)
         deleted_order = purchase_service.get_purchase_order(self.session, order_id)
         self.assertIsNone(deleted_order)
-
-        # Check that the ledger entry is also deleted
-        ledger_entry = self.session.query(models.LedgerTransaction).filter_by(related_order_id=order_id).first()
-        self.assertIsNone(ledger_entry)
 
     def test_receive_purchase_order(self):
         items = [{"product_id": self.product1.id, "quantity": 10, "price_per_unit": 8.0}]

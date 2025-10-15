@@ -72,6 +72,26 @@
         <source>Ledger</source>
         <translation>دفتر الأستاذ</translation>
     </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="59"/>
+        <source>Chart of Accounts</source>
+        <translation>شجرة الحسابات</translation>
+    </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="64"/>
+        <source>Journal Entries</source>
+        <translation>قيود اليومية</translation>
+    </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="69"/>
+        <source>Reporting</source>
+        <translation>التقارير</translation>
+    </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="73"/>
+        <source>Notifications</source>
+        <translation>الإشعارات</translation>
+    </message>
 </context>
 <context>
     <name>CustomerWidget</name>
@@ -599,6 +619,254 @@
         <location filename="../../ui/ledger_widget.py" line="12"/>
         <source>Related Order</source>
         <translation>الطلب المرتبط</translation>
+    </message>
+</context>
+<context>
+    <name>ChartOfAccountsWidget</name>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="13"/>
+        <source>Add Account</source>
+        <translation>إضافة حساب</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="18"/>
+        <source>ID</source>
+        <translation>المعرف</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="18"/>
+        <source>Name</source>
+        <translation>الاسم</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="18"/>
+        <source>Type</source>
+        <translation>النوع</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="18"/>
+        <source>Balance</source>
+        <translation>الرصيد</translation>
+    </message>
+</context>
+<context>
+    <name>AddAccountDialog</name>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="41"/>
+        <source>Add Account</source>
+        <translation>إضافة حساب</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="47"/>
+        <source>Name</source>
+        <translation>الاسم</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="58"/>
+        <source>Save</source>
+        <translation>حفظ</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="65"/>
+        <source>Warning</source>
+        <translation>تحذير</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="65"/>
+        <source>Name is required.</source>
+        <translation>الاسم مطلوب.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/chart_of_accounts_widget.py" line="71"/>
+        <source>Error</source>
+        <translation>خطأ</translation>
+    </message>
+</context>
+<context>
+    <name>LedgerWidget</name>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="14"/>
+        <source>Add Journal Entry</source>
+        <translation>إضافة قيد يومية</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="20"/>
+        <source>ID</source>
+        <translation>المعرف</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="20"/>
+        <source>Date</source>
+        <translation>التاريخ</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="20"/>
+        <source>Description</source>
+        <translation>الوصف</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="20"/>
+        <source>Amount</source>
+        <translation>المبلغ</translation>
+    </message>
+</context>
+<context>
+    <name>AddJournalEntryDialog</name>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="44"/>
+        <source>Add Journal Entry</source>
+        <translation>إضافة قيد يومية</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="48"/>
+        <source>Description</source>
+        <translation>الوصف</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="53"/>
+        <source>Account</source>
+        <translation>الحساب</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="53"/>
+        <source>Debit</source>
+        <translation>مدين</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="53"/>
+        <source>Credit</source>
+        <translation>دائن</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="56"/>
+        <source>Add Row</source>
+        <translation>إضافة صف</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="60"/>
+        <source>Save</source>
+        <translation>حفظ</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="96"/>
+        <source>Warning</source>
+        <translation>تحذير</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="96"/>
+        <source>Description is required.</source>
+        <translation>الوصف مطلوب.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="110"/>
+        <source>Enter either a debit or a credit, not both.</source>
+        <translation>أدخل مدينًا أو دائنًا ، وليس كليهما.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="116"/>
+        <source>Invalid debit amount.</source>
+        <translation>مبلغ مدين غير صالح.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="122"/>
+        <source>Invalid credit amount.</source>
+        <translation>مبلغ دائن غير صالح.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ledger_widget.py" line="128"/>
+        <source>Error</source>
+        <translation>خطأ</translation>
+    </message>
+</context>
+<context>
+    <name>ReportingWidget</name>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="23"/>
+        <source>Profit &amp; Loss</source>
+        <translation>الأرباح والخسائر</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="24"/>
+        <source>Balance Sheet</source>
+        <translation>الميزانية العمومية</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="25"/>
+        <source>Sales Reports</source>
+        <translation>تقارير المبيعات</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="26"/>
+        <source>Inventory Reports</source>
+        <translation>تقارير المخزون</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="34"/>
+        <source>Account</source>
+        <translation>الحساب</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="34"/>
+        <source>Amount</source>
+        <translation>المبلغ</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="41"/>
+        <source>Total Revenue</source>
+        <translation>إجمالي الإيرادات</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="43"/>
+        <source>Total Expenses</source>
+        <translation>إجمالي المصروفات</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="45"/>
+        <source>Net Profit</source>
+        <translation>صافي الربح</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="59"/>
+        <source>Total Assets</source>
+        <translation>إجمالي الأصول</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="61"/>
+        <source>Total Liabilities</source>
+        <translation>إجمالي الالتزامات</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="63"/>
+        <source>Total Equity</source>
+        <translation>إجمالي حقوق الملكية</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="68"/>
+        <source>Refresh Report</source>
+        <translation>تحديث التقرير</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="73"/>
+        <source>Product</source>
+        <translation>المنتج</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="73"/>
+        <source>Stock Quantity</source>
+        <translation>كمية المخزون</translation>
+    </message>
+    <message>
+        <location filename="../../ui/reporting_widget.py" line="73"/>
+        <source>Low Stock Threshold</source>
+        <translation>حد المخزون المنخفض</translation>
+    </message>
+</context>
+<context>
+    <name>NotificationWidget</name>
+    <message>
+        <location filename="../../ui/notification_widget.py" line="22"/>
+        <source>Low stock for {product.name}: {product.stock_quantity} remaining</source>
+        <translation>مخزون منخفض للمنتج {product.name}: المتبقي {product.stock_quantity}</translation>
     </message>
 </context>
 </TS>
