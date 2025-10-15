@@ -2,10 +2,10 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabe
 from PyQt6.QtCore import QCoreApplication
 from .customer_widget import CustomerWidget
 from .supplier_widget import SupplierWidget
-from .product_widget import ProductWidget
+from .inventory_widget import InventoryWidget
 from .category_widget import CategoryWidget
 from .sales_widget import SalesWidget
-from .purchase_widget import PurchaseWidget
+from .purchase_order_widget import PurchaseOrderWidget
 from .ledger_widget import LedgerWidget
 from .reporting_widget import ReportingWidget
 from .chart_of_accounts_widget import ChartOfAccountsWidget
@@ -34,9 +34,9 @@ class MainWindow(QMainWindow):
         self.supplier_widget = SupplierWidget()
         self.tabs.addTab(self.supplier_widget, self.tr("Suppliers"))
 
-        # Add the product management widget
-        self.product_widget = ProductWidget()
-        self.tabs.addTab(self.product_widget, self.tr("Products"))
+        # Add the inventory management widget
+        self.inventory_widget = InventoryWidget()
+        self.tabs.addTab(self.inventory_widget, self.tr("Inventory"))
 
         # Add the category management widget
         self.category_widget = CategoryWidget()
@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
 
         # Add the purchase management widget - Admin and Accountant only
         if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
-            self.purchase_widget = PurchaseWidget()
+            self.purchase_widget = PurchaseOrderWidget()
             self.tabs.addTab(self.purchase_widget, self.tr("Purchases"))
 
         # Add the Chart of Accounts widget - Admin and Accountant only
@@ -69,3 +69,9 @@ class MainWindow(QMainWindow):
         # Add the notification widget
         self.notification_widget = NotificationWidget()
         self.tabs.addTab(self.notification_widget, self.tr("Notifications"))
+
+        # Add the user management widget - Admin only
+        if self.user.role == UserRole.ADMIN:
+            from .user_widget import UserWidget
+            self.user_widget = UserWidget()
+            self.tabs.addTab(self.user_widget, self.tr("Users"))

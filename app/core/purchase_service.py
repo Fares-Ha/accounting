@@ -45,7 +45,7 @@ def create_purchase_order(db: Session, supplier_id: int, items: list[dict]):
 
     return db_order
 
-def get_purchase_orders(db: Session):
+def get_all_purchase_orders(db: Session):
     """
     Retrieves all purchase orders.
     """

@@ -77,7 +77,7 @@ class ProductDialog(QDialog):
             "category_id": self.category_input.currentData()
         }
 
-class ProductWidget(QWidget):
+class InventoryWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout(self)
@@ -103,6 +103,10 @@ class ProductWidget(QWidget):
         self.history_button.clicked.connect(self.show_inventory_history)
         self.layout.addWidget(self.history_button)
 
+        self.adjust_stock_button = QPushButton(self.tr("Adjust Stock"))
+        self.adjust_stock_button.clicked.connect(self.adjust_stock)
+        self.layout.addWidget(self.adjust_stock_button)
+
         self.load_products()
 
     def show_inventory_history(self):
@@ -116,6 +120,7 @@ class ProductWidget(QWidget):
         dialog.exec()
 
 from PyQt6.QtGui import QColor
+from .stock_adjustment_dialog import StockAdjustmentDialog
 
     def load_products(self):
         self.table.setRowCount(0)
@@ -174,4 +179,16 @@ from PyQt6.QtGui import QColor
         if reply == QMessageBox.StandardButton.Yes:
             with get_db() as db:
                 product_service.delete_product(db, product_id)
+            self.load_products()
+
+    def adjust_stock(self):
+        selected_row = self.table.currentRow()
+        if selected_row == -1:
+            QMessageBox.warning(self, self.tr("Warning"), self.tr("Please select a product to adjust its stock."))
+            return
+
+        product_id = int(self.table.item(selected_row, 0).text())
+        product_name = self.table.item(selected_row, 1).text()
+        dialog = StockAdjustmentDialog(product_id, product_name)
+        if dialog.exec():
             self.load_products()

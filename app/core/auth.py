@@ -34,3 +34,39 @@ def authenticate_user(db: Session, username: str, password: str) -> models.User 
     if not user or not verify_password(password, user.hashed_password):
         return None
     return user
+
+def get_users(db: Session):
+    """
+    Retrieves all users.
+    """
+    return db.query(models.User).all()
+
+def get_user(db: Session, user_id: int):
+    """
+    Retrieves a single user by their ID.
+    """
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+def update_user(db: Session, user_id: int, username: str, password: str | None, role: models.UserRole):
+    """
+    Updates an existing user.
+    """
+    db_user = get_user(db, user_id)
+    if db_user:
+        db_user.username = username
+        if password:
+            db_user.hashed_password = hash_password(password)
+        db_user.role = role
+        db.commit()
+        db.refresh(db_user)
+    return db_user
+
+def delete_user(db: Session, user_id: int):
+    """
+    Deletes a user.
+    """
+    db_user = get_user(db, user_id)
+    if db_user:
+        db.delete(db_user)
+        db.commit()
+    return db_user
