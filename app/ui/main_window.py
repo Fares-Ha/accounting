@@ -3,6 +3,7 @@ from PyQt6.QtCore import QCoreApplication
 from .customer_widget import CustomerWidget
 from .supplier_widget import SupplierWidget
 from .product_widget import ProductWidget
+from .category_widget import CategoryWidget
 from .sales_widget import SalesWidget
 from .purchase_widget import PurchaseWidget
 from .ledger_widget import LedgerWidget
@@ -33,6 +34,10 @@ class MainWindow(QMainWindow):
         # Add the product management widget
         self.product_widget = ProductWidget()
         self.tabs.addTab(self.product_widget, self.tr("Products"))
+
+        # Add the category management widget
+        self.category_widget = CategoryWidget()
+        self.tabs.addTab(self.category_widget, self.tr("Categories"))
 
         # Add the sales management widget
         self.sales_widget = SalesWidget()
