@@ -1,191 +1,237 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QLineEdit, QFormLayout, QMessageBox, QDialog, QComboBox, QSpinBox
-from app.core.purchase_service import PurchaseService
-from app.core.product_service import ProductService
-from app.core.supplier_service import SupplierService
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
+                             QTableWidgetItem, QHeaderView, QFormLayout, QMessageBox,
+                             QDialog, QComboBox, QSpinBox, QDialogButtonBox, QDoubleSpinBox)
 from app.database.database import get_db
+from app.core import purchase_service, product_service, supplier_service
 
 class PurchaseOrderDialog(QDialog):
-    def __init__(self, purchase_service, product_service, supplier_service, db_session, order_id=None):
+    def __init__(self, order=None):
         super().__init__()
-        self.purchase_service = purchase_service
-        self.product_service = product_service
-        self.supplier_service = supplier_service
-        self.db_session = db_session
-        self.order_id = order_id
-        self.setWindowTitle(f"{'Edit' if order_id else 'New'} Purchase Order")
-        self.init_ui()
-        if self.order_id:
-            self.load_order_data()
+        self.order = order
+        self.items = []
+        self.setWindowTitle(self.tr("Edit Purchase Order") if self.order else self.tr("Create Purchase Order"))
 
-    def init_ui(self):
-        layout = QVBoxLayout(self)
-        form_layout = QFormLayout()
+        self.layout = QVBoxLayout(self)
+        self.form_layout = QFormLayout()
 
         self.supplier_combo = QComboBox()
-        with get_db() as db:
-            suppliers = self.supplier_service.get_all_suppliers(db)
-            for supplier in suppliers:
-                self.supplier_combo.addItem(supplier.name, supplier.id)
-        form_layout.addRow("Supplier:", self.supplier_combo)
+        self.form_layout.addRow(self.tr("Supplier:"), self.supplier_combo)
+        self.layout.addLayout(self.form_layout)
 
-        self.items_table = QTableWidget()
-        self.items_table.setColumnCount(4)
-        self.items_table.setHorizontalHeaderLabels(["Product", "Quantity", "Price per Unit", "Remove"])
-        self.items_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        layout.addWidget(self.items_table)
-
+        # Item adding section
         add_item_layout = QHBoxLayout()
         self.product_combo = QComboBox()
-        with get_db() as db:
-            products = self.product_service.get_products(db)
-            for product in products:
-                self.product_combo.addItem(product.name, product.id)
         self.quantity_spinbox = QSpinBox()
         self.quantity_spinbox.setRange(1, 9999)
-        self.price_spinbox = QSpinBox()
-        self.price_spinbox.setRange(0, 999999)
-        self.add_item_button = QPushButton("Add Item")
+        self.price_spinbox = QDoubleSpinBox()
+        self.price_spinbox.setRange(0.01, 999999.99)
+        self.price_spinbox.setDecimals(2)
+        self.add_item_button = QPushButton(self.tr("Add Item"))
         self.add_item_button.clicked.connect(self.add_item)
         add_item_layout.addWidget(self.product_combo)
         add_item_layout.addWidget(self.quantity_spinbox)
         add_item_layout.addWidget(self.price_spinbox)
         add_item_layout.addWidget(self.add_item_button)
-        layout.addLayout(add_item_layout)
+        self.layout.addLayout(add_item_layout)
 
-        self.save_button = QPushButton("Save")
-        self.save_button.clicked.connect(self.save_order)
-        layout.addWidget(self.save_button)
+        self.items_table = QTableWidget()
+        self.items_table.setColumnCount(4)
+        self.items_table.setHorizontalHeaderLabels([self.tr("Product"), self.tr("Quantity"), self.tr("Price per Unit"), self.tr("Remove")])
+        self.items_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.layout.addWidget(self.items_table)
+
+        self.buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        self.layout.addWidget(self.buttons)
+
+        self.load_suppliers_and_products()
+        if self.order:
+            self.load_order_data()
+
+    def load_suppliers_and_products(self):
+        with get_db() as db:
+            suppliers = supplier_service.get_all_suppliers(db)
+            for supplier in suppliers:
+                self.supplier_combo.addItem(supplier.name, userData=supplier.id)
+
+            products = product_service.get_products(db)
+            for product in products:
+                self.product_combo.addItem(product.name, userData=product.id)
+
+    def load_order_data(self):
+        # Set supplier
+        supplier_index = self.supplier_combo.findData(self.order.supplier_id)
+        if supplier_index >= 0:
+            self.supplier_combo.setCurrentIndex(supplier_index)
+
+        # Populate items
+        self.items = [{
+            "product_id": item.product_id,
+            "quantity": item.quantity,
+            "price_per_unit": item.price_per_unit
+        } for item in self.order.items]
+        self.refresh_items_table()
 
     def add_item(self):
         product_id = self.product_combo.currentData()
-        product_name = self.product_combo.currentText()
         quantity = self.quantity_spinbox.value()
         price = self.price_spinbox.value()
 
         if not product_id or quantity <= 0 or price <= 0:
-            QMessageBox.warning(self, "Input Error", "Please select a product and enter a valid quantity and price.")
+            QMessageBox.warning(self, self.tr("Input Error"), self.tr("Please select a product and enter a valid quantity and price."))
             return
 
-        row_position = self.items_table.rowCount()
-        self.items_table.insertRow(row_position)
-        self.items_table.setItem(row_position, 0, QTableWidgetItem(product_name))
-        self.items_table.setItem(row_position, 1, QTableWidgetItem(str(quantity)))
-        self.items_table.setItem(row_position, 2, QTableWidgetItem(str(price)))
-        remove_button = QPushButton("Remove")
-        remove_button.clicked.connect(lambda: self.items_table.removeRow(row_position))
-        self.items_table.setCellWidget(row_position, 3, remove_button)
-        self.items_table.setUserData(row_position, product_id)
+        # Check if item already exists
+        for item in self.items:
+            if item['product_id'] == product_id:
+                QMessageBox.warning(self, self.tr("Duplicate Item"), self.tr("This item is already in the order."))
+                return
 
-    def save_order(self):
-        supplier_id = self.supplier_combo.currentData()
-        items = []
-        for row in range(self.items_table.rowCount()):
-            items.append({
-                "product_id": self.items_table.userData(row),
-                "quantity": int(self.items_table.item(row, 1).text()),
-                "price_per_unit": int(self.items_table.item(row, 2).text())
-            })
+        self.items.append({
+            "product_id": product_id,
+            "quantity": quantity,
+            "price_per_unit": price
+        })
+        self.refresh_items_table()
 
-        if not supplier_id or not items:
-            QMessageBox.warning(self, "Input Error", "Please select a supplier and add at least one item.")
-            return
+    def remove_item(self, product_id):
+        self.items = [item for item in self.items if item['product_id'] != product_id]
+        self.refresh_items_table()
 
-        with get_db() as db:
-            if self.order_id:
-                self.purchase_service.update_purchase_order(db, self.order_id, supplier_id, items)
-            else:
-                self.purchase_service.create_purchase_order(db, supplier_id, items)
-        self.accept()
-
-    def load_order_data(self):
-        order = self.purchase_service.get_purchase_order(self.order_id)
-        if not order:
-            return
-
-        index = self.supplier_combo.findData(order.supplier_id)
-        if index >= 0:
-            self.supplier_combo.setCurrentIndex(index)
-
+    def refresh_items_table(self):
         self.items_table.setRowCount(0)
-        for item in order.items:
-            self.add_item_to_table(item.product.name, item.quantity, item.price_per_unit, item.product_id)
+        with get_db() as db:
+            for row_num, item_data in enumerate(self.items):
+                product = product_service.get_product(db, item_data['product_id'])
+                self.items_table.insertRow(row_num)
+                self.items_table.setItem(row_num, 0, QTableWidgetItem(product.name))
+                self.items_table.setItem(row_num, 1, QTableWidgetItem(str(item_data['quantity'])))
+                self.items_table.setItem(row_num, 2, QTableWidgetItem(f"{item_data['price_per_unit']:.2f}"))
 
-    def add_item_to_table(self, product_name, quantity, price, product_id):
-        row_position = self.items_table.rowCount()
-        self.items_table.insertRow(row_position)
-        self.items_table.setItem(row_position, 0, QTableWidgetItem(product_name))
-        self.items_table.setItem(row_position, 1, QTableWidgetItem(str(quantity)))
-        self.items_table.setItem(row_position, 2, QTableWidgetItem(str(price)))
-        remove_button = QPushButton("Remove")
-        remove_button.clicked.connect(lambda: self.items_table.removeRow(row_position))
-        self.items_table.setCellWidget(row_position, 3, remove_button)
-        self.items_table.setUserData(row_position, product_id)
+                remove_button = QPushButton(self.tr("Remove"))
+                remove_button.clicked.connect(lambda _, pid=product.id: self.remove_item(pid))
+                self.items_table.setCellWidget(row_num, 3, remove_button)
+
+    def get_data(self):
+        if not self.supplier_combo.currentData() or not self.items:
+            return None
+        return {
+            "supplier_id": self.supplier_combo.currentData(),
+            "items": self.items
+        }
 
 
 class PurchaseOrderWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.purchase_service = PurchaseService()
-        self.product_service = ProductService()
-        self.supplier_service = SupplierService()
-        self.db_session = next(get_db())
-        self.init_ui()
-        self.load_purchase_orders()
-
-    def init_ui(self):
-        layout = QVBoxLayout(self)
-        button_layout = QHBoxLayout()
-        self.new_order_button = QPushButton("New Purchase Order")
-        self.new_order_button.clicked.connect(self.open_new_order_dialog)
-        self.edit_order_button = QPushButton("Edit Selected Order")
-        self.edit_order_button.clicked.connect(self.open_edit_order_dialog)
-        self.delete_order_button = QPushButton("Delete Selected Order")
-        self.delete_order_button.clicked.connect(self.delete_order)
-        button_layout.addWidget(self.new_order_button)
-        button_layout.addWidget(self.edit_order_button)
-        button_layout.addWidget(self.delete_order_button)
-        layout.addLayout(button_layout)
+        self.layout = QVBoxLayout(self)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["ID", "Supplier", "Total Amount", "Status", "Created At"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels([self.tr("ID"), self.tr("Supplier"), self.tr("Total Amount"), self.tr("Status"), self.tr("Created At"), self.tr("Actions")])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        layout.addWidget(self.table)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.layout.addWidget(self.table)
 
-    def load_purchase_orders(self):
-        orders = self.purchase_service.get_all_purchase_orders(self.db_session)
-        self.table.setRowCount(len(orders))
-        for row, order in enumerate(orders):
-            self.table.setItem(row, 0, QTableWidgetItem(str(order.id)))
-            self.table.setItem(row, 1, QTableWidgetItem(order.supplier.name))
-            self.table.setItem(row, 2, QTableWidgetItem(str(order.total_amount)))
-            self.table.setItem(row, 3, QTableWidgetItem(order.status))
-            self.table.setItem(row, 4, QTableWidgetItem(order.created_at.strftime("%Y-%m-%d %H:%M:%S")))
+        button_layout = QHBoxLayout()
+        self.add_button = QPushButton(self.tr("Create Purchase Order"))
+        self.add_button.clicked.connect(self.create_order)
+        button_layout.addWidget(self.add_button)
+        self.layout.addLayout(button_layout)
 
-    def open_new_order_dialog(self):
-        dialog = PurchaseOrderDialog(self.purchase_service, self.product_service, self.supplier_service, self.db_session)
+        self.load_orders()
+
+    def load_orders(self):
+        self.table.setRowCount(0)
+        with get_db() as db:
+            orders = purchase_service.get_all_purchase_orders(db)
+            for row_num, order in enumerate(orders):
+                self.table.insertRow(row_num)
+                self.table.setItem(row_num, 0, QTableWidgetItem(str(order.id)))
+                self.table.setItem(row_num, 1, QTableWidgetItem(order.supplier.name))
+                self.table.setItem(row_num, 2, QTableWidgetItem(f"{order.total_amount:.2f}"))
+                self.table.setItem(row_num, 3, QTableWidgetItem(self.tr(order.status)))
+                self.table.setItem(row_num, 4, QTableWidgetItem(order.created_at.strftime("%Y-%m-%d %H:%M")))
+
+                actions_layout = QHBoxLayout()
+                edit_button = QPushButton(self.tr("Edit"))
+                edit_button.clicked.connect(lambda _, r=row_num: self.edit_order(r))
+                delete_button = QPushButton(self.tr("Delete"))
+                delete_button.clicked.connect(lambda _, r=row_num: self.delete_order(r))
+                receive_button = QPushButton(self.tr("Receive"))
+                receive_button.clicked.connect(lambda _, r=row_num: self.receive_order(r))
+
+                # Disable receive button if order is already received
+                if order.status == "Received":
+                    receive_button.setEnabled(False)
+
+                actions_layout.addWidget(edit_button)
+                actions_layout.addWidget(delete_button)
+                actions_layout.addWidget(receive_button)
+
+                actions_widget = QWidget()
+                actions_widget.setLayout(actions_layout)
+                self.table.setCellWidget(row_num, 5, actions_widget)
+
+    def create_order(self):
+        dialog = PurchaseOrderDialog()
         if dialog.exec():
-            self.load_purchase_orders()
+            data = dialog.get_data()
+            if data:
+                try:
+                    with get_db() as db:
+                        purchase_service.create_purchase_order(db, **data)
+                    self.load_orders()
+                except Exception as e:
+                    QMessageBox.critical(self, self.tr("Error"), self.tr("Could not create purchase order: {e}"))
+            else:
+                QMessageBox.warning(self, self.tr("Input Error"), self.tr("Supplier and items must be specified."))
 
-    def open_edit_order_dialog(self):
-        selected_rows = self.table.selectionModel().selectedRows()
-        if not selected_rows:
-            QMessageBox.warning(self, "Selection Error", "Please select an order to edit.")
+    def edit_order(self, row_num):
+        order_id = int(self.table.item(row_num, 0).text())
+        with get_db() as db:
+            order = purchase_service.get_purchase_order(db, order_id)
+
+        if not order:
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Purchase order not found."))
             return
-        order_id = int(self.table.item(selected_rows[0].row(), 0).text())
-        dialog = PurchaseOrderDialog(self.purchase_service, self.product_service, self.supplier_service, self.db_session, order_id=order_id)
+
+        dialog = PurchaseOrderDialog(order=order)
         if dialog.exec():
-            self.load_purchase_orders()
+            data = dialog.get_data()
+            if data:
+                try:
+                    with get_db() as db:
+                        purchase_service.update_purchase_order(db, order_id, **data)
+                    self.load_orders()
+                except Exception as e:
+                    QMessageBox.critical(self, self.tr("Error"), self.tr("Could not update purchase order: {e}"))
 
-    def delete_order(self):
-        selected_rows = self.table.selectionModel().selectedRows()
-        if not selected_rows:
-            QMessageBox.warning(self, "Selection Error", "Please select an order to delete.")
-            return
-        order_id = int(self.table.item(selected_rows[0].row(), 0).text())
-        reply = QMessageBox.question(self, "Delete Order", "Are you sure you want to delete this purchase order?",
+    def delete_order(self, row_num):
+        order_id = int(self.table.item(row_num, 0).text())
+        reply = QMessageBox.question(self, self.tr("Confirm Deletion"),
+                                     self.tr(f"Are you sure you want to delete purchase order {order_id}?"),
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
         if reply == QMessageBox.StandardButton.Yes:
-            self.purchase_service.delete_purchase_order(self.db_session, order_id)
-            self.load_purchase_orders()
+            try:
+                with get_db() as db:
+                    purchase_service.delete_purchase_order(db, order_id)
+                self.load_orders()
+            except ValueError as e:
+                QMessageBox.critical(self, self.tr("Error"), str(e))
+
+    def receive_order(self, row_num):
+        order_id = int(self.table.item(row_num, 0).text())
+        reply = QMessageBox.question(self, self.tr("Confirm Reception"),
+                                     self.tr(f"Are you sure you want to mark order {order_id} as received? This will update stock levels."),
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                with get_db() as db:
+                    purchase_service.receive_purchase_order(db, order_id)
+                self.load_orders()
+            except ValueError as e:
+                QMessageBox.critical(self, self.tr("Error"), str(e))
