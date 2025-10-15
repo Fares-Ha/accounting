@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from ..database import models
 
-def create_product(db: Session, name: str, description: str, price: int, stock_quantity: int):
+def create_product(db: Session, name: str, description: str, price: int, stock_quantity: int, category_id: int = None):
     """
     Creates a new product.
     """
@@ -9,7 +9,8 @@ def create_product(db: Session, name: str, description: str, price: int, stock_q
         name=name,
         description=description,
         price=price,
-        stock_quantity=stock_quantity
+        stock_quantity=stock_quantity,
+        category_id=category_id
     )
     db.add(db_product)
     db.commit()
@@ -28,7 +29,7 @@ def get_product(db: Session, product_id: int):
     """
     return db.query(models.Product).filter(models.Product.id == product_id).first()
 
-def update_product(db: Session, product_id: int, name: str, description: str, price: int, stock_quantity: int):
+def update_product(db: Session, product_id: int, name: str, description: str, price: int, stock_quantity: int, category_id: int = None):
     """
     Updates an existing product.
     """
@@ -38,6 +39,7 @@ def update_product(db: Session, product_id: int, name: str, description: str, pr
         db_product.description = description
         db_product.price = price
         db_product.stock_quantity = stock_quantity
+        db_product.category_id = category_id
         db.commit()
         db.refresh(db_product)
     return db_product

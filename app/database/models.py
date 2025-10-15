@@ -36,6 +36,18 @@ class Customer(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class ProductCategory(Base):
+    """
+    ProductCategory model for categorizing products.
+    """
+    __tablename__ = "product_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True, index=True)
+
+    products = relationship("Product", back_populates="category")
+
+
 class Product(Base):
     """
     Product model for inventory management.
@@ -47,7 +59,10 @@ class Product(Base):
     description = Column(String)
     price = Column(Integer, nullable=False)  # Storing price in cents to avoid floating point issues
     stock_quantity = Column(Integer, nullable=False, default=0)
+    category_id = Column(Integer, ForeignKey("product_categories.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    category = relationship("ProductCategory", back_populates="products")
 
 
 class Supplier(Base):
