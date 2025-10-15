@@ -35,6 +35,8 @@ class Customer(Base):
     address = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    invoices = relationship("Invoice", back_populates="customer")
+
 
 class ProductCategory(Base):
     """
@@ -103,6 +105,49 @@ class Supplier(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class InvoiceStatus(enum.Enum):
+    DRAFT = "draft"
+    SENT = "sent"
+    PAID = "paid"
+    VOID = "void"
+
+
+class Invoice(Base):
+    """
+    Invoice model for billing customers.
+    """
+    __tablename__ = "invoices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sales_order_id = Column(Integer, ForeignKey("sales_orders.id"), nullable=False, unique=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+    status = Column(Enum(InvoiceStatus), nullable=False, default=InvoiceStatus.DRAFT)
+    due_date = Column(DateTime(timezone=True))
+    total_amount = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    customer = relationship("Customer", back_populates="invoices")
+    order = relationship("SalesOrder", back_populates="invoice")
+    items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
+
+
+class InvoiceItem(Base):
+    """
+    InvoiceItem model for individual items on an invoice.
+    """
+    __tablename__ = "invoice_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    price_per_unit = Column(Integer, nullable=False)
+
+    invoice = relationship("Invoice", back_populates="items")
+    product = relationship("Product")
+
+
 class SalesOrder(Base):
     """
     SalesOrder model for tracking sales.
@@ -116,6 +161,7 @@ class SalesOrder(Base):
 
     customer = relationship("Customer")
     items = relationship("SalesOrderItem", back_populates="order", cascade="all, delete-orphan")
+    invoice = relationship("Invoice", uselist=False, back_populates="order", cascade="all, delete-orphan")
 
 
 class SalesOrderItem(Base):

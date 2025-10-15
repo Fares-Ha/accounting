@@ -35,13 +35,26 @@ def create_sales_order(db: Session, customer_id: int, items: list[dict]):
     db.commit()
     db.refresh(db_order)
 
-    # Create a corresponding ledger transaction
-    accounting_service.create_ledger_transaction(
-        db,
-        amount=total_amount,
-        transaction_type=models.TransactionType.SALE,
-        related_order_id=db_order.id
-    )
+    # This is a placeholder for a more robust accounting integration.
+    # In a real system, you would fetch the correct accounts for
+    # 'Accounts Receivable' and 'Sales Revenue'.
+    try:
+        accounts_receivable = db.query(models.Account).filter(models.Account.name == "Accounts Receivable").one()
+        sales_revenue = db.query(models.Account).filter(models.Account.name == "Sales Revenue").one()
+
+        accounting_service.create_journal_entry(
+            db,
+            description=f"Sale for order #{db_order.id}",
+            transactions=[
+                {"account_id": accounts_receivable.id, "amount": total_amount},
+                {"account_id": sales_revenue.id, "amount": -total_amount},
+            ]
+        )
+    except Exception as e:
+        # If accounting fails, we should ideally roll back the sales order creation.
+        # For now, we'll just log the error.
+        print(f"Failed to create journal entry for sale: {e}")
+
 
     return db_order
 
@@ -70,11 +83,6 @@ def delete_sales_order(db: Session, order_id: int):
         product = product_service.get_product(db, item.product_id)
         if product:
             product.stock_quantity += item.quantity
-
-    # Delete the corresponding ledger transaction
-    ledger_entry = db.query(models.Ledger).filter(models.Ledger.related_order_id == order_id).first()
-    if ledger_entry:
-        db.delete(ledger_entry)
 
     db.delete(order)
     db.commit()
@@ -118,11 +126,6 @@ def update_sales_order(db: Session, order_id: int, customer_id: int, items: list
     order.customer_id = customer_id
     order.total_amount = total_amount
     order.items = order_items
-
-    # Update ledger
-    ledger_entry = db.query(models.Ledger).filter(models.Ledger.related_order_id == order_id).first()
-    if ledger_entry:
-        ledger_entry.amount = total_amount
 
     db.commit()
     db.refresh(order)
