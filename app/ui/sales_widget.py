@@ -122,8 +122,9 @@ class SalesOrderDialog(QDialog):
         self.refresh_items_table()
 
 class SalesWidget(QWidget):
-    def __init__(self):
+    def __init__(self, current_user):
         super().__init__()
+        self.current_user = current_user
         self.layout = QVBoxLayout(self)
 
         self.table = QTableWidget()
@@ -179,7 +180,7 @@ class SalesWidget(QWidget):
             data = dialog.get_data()
             try:
                 with get_db() as db:
-                    sales_service.create_sales_order(db, **data)
+                    sales_service.create_sales_order(db, user_id=self.current_user.id, **data)
                 self.load_orders()
             except ValueError as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))

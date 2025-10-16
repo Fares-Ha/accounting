@@ -78,8 +78,9 @@ class ProductDialog(QDialog):
         }
 
 class InventoryWidget(QWidget):
-    def __init__(self):
+    def __init__(self, current_user):
         super().__init__()
+        self.current_user = current_user
         self.layout = QVBoxLayout(self)
 
         self.table = QTableWidget()
@@ -164,7 +165,7 @@ from .stock_adjustment_dialog import StockAdjustmentDialog
         if dialog.exec():
             data = dialog.get_data()
             with get_db() as db:
-                product_service.update_product(db, product_id, **data)
+                product_service.update_product(db, self.current_user.id, product_id, **data)
             self.load_products()
 
     def delete_product(self):
@@ -189,7 +190,7 @@ from .stock_adjustment_dialog import StockAdjustmentDialog
 
         product_id = int(self.table.item(selected_row, 0).text())
         product_name = self.table.item(selected_row, 1).text()
-        dialog = StockAdjustmentDialog(product_id, product_name)
+        dialog = StockAdjustmentDialog(product_id, product_name, self.current_user)
         if dialog.exec():
             self.load_products()
 

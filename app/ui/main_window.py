@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.supplier_widget, self.tr("Suppliers"))
 
         # Add the inventory management widget
-        self.inventory_widget = InventoryWidget()
+        self.inventory_widget = InventoryWidget(self.user)
         self.tabs.addTab(self.inventory_widget, self.tr("Inventory"))
 
         # Add the category management widget
@@ -56,12 +56,12 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.category_widget, self.tr("Categories"))
 
         # Add the sales management widget
-        self.sales_widget = SalesWidget()
+        self.sales_widget = SalesWidget(self.user)
         self.tabs.addTab(self.sales_widget, self.tr("Sales"))
 
         # Add the purchase management widget - Admin and Accountant only
         if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
-            self.purchase_widget = PurchaseOrderWidget()
+            self.purchase_widget = PurchaseOrderWidget(self.user)
             self.tabs.addTab(self.purchase_widget, self.tr("Purchases"))
 
         # Add the invoicing widget - Admin and Accountant only

@@ -1,6 +1,9 @@
 import bcrypt
 from sqlalchemy.orm import Session
 from ..database import models
+from .audit_service import AuditService
+
+audit_service = AuditService()
 
 def hash_password(password: str) -> str:
     """
@@ -32,7 +35,20 @@ def authenticate_user(db: Session, username: str, password: str) -> models.User 
     """
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user or not verify_password(password, user.hashed_password):
+        audit_service.create_audit_log(
+            db,
+            user_id=user.id if user else None,
+            action="LOGIN_FAILURE",
+            details=f"Failed login attempt for username '{username}'"
+        )
         return None
+
+    audit_service.create_audit_log(
+        db,
+        user_id=user.id,
+        action="LOGIN_SUCCESS",
+        details=f"User '{username}' logged in successfully"
+    )
     return user
 
 def get_users(db: Session):

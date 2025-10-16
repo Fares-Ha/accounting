@@ -21,7 +21,21 @@ class NotificationWidget(QWidget):
 
     def load_notifications(self):
         self.notification_list.clear()
+
+        # Low stock notifications
         low_stock_products = self.notification_service.get_low_stock_notifications(self.db_session)
         for product in low_stock_products:
             item = QListWidgetItem(f"Low stock for {product.name}: {product.stock_quantity} remaining")
+            self.notification_list.addItem(item)
+
+        # Overdue invoice notifications
+        overdue_invoices = self.notification_service.get_overdue_invoices(self.db_session)
+        for invoice in overdue_invoices:
+            item = QListWidgetItem(f"Invoice #{invoice.id} is overdue. Due date: {invoice.due_date.strftime('%Y-%m-%d')}")
+            self.notification_list.addItem(item)
+
+        # Upcoming payment due notifications
+        upcoming_dues = self.notification_service.get_upcoming_payment_dues(self.db_session)
+        for invoice in upcoming_dues:
+            item = QListWidgetItem(f"Payment for invoice #{invoice.id} is due soon. Due date: {invoice.due_date.strftime('%Y-%m-%d')}")
             self.notification_list.addItem(item)

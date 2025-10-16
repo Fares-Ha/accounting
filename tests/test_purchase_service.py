@@ -11,6 +11,11 @@ class TestPurchaseService(unittest.TestCase):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
+        # Create a dummy user
+        self.user = models.User(id=1, username="testuser", hashed_password="password", role=models.UserRole.ADMIN)
+        self.session.add(self.user)
+        self.session.commit()
+
         # Create a dummy supplier and product for testing
         self.supplier = supplier_service.create_supplier(self.session, "Test Supplier", "supplier@test.com", "111222333", "123 Test Street")
         self.product1 = product_service.create_product(self.session, "Test Product 1", "SKU001", 10.0, 100, 1)
@@ -25,7 +30,7 @@ class TestPurchaseService(unittest.TestCase):
             {"product_id": self.product1.id, "quantity": 10, "price_per_unit": 8.0},
             {"product_id": self.product2.id, "quantity": 5, "price_per_unit": 15.0}
         ]
-        order = purchase_service.create_purchase_order(self.session, self.supplier.id, items)
+        order = purchase_service.create_purchase_order(self.session, self.user.id, self.supplier.id, items)
 
         self.assertIsNotNone(order.id)
         self.assertEqual(order.supplier_id, self.supplier.id)
@@ -41,15 +46,15 @@ class TestPurchaseService(unittest.TestCase):
 
     def test_get_all_purchase_orders(self):
         items = [{"product_id": self.product1.id, "quantity": 10, "price_per_unit": 8.0}]
-        purchase_service.create_purchase_order(self.session, self.supplier.id, items)
-        purchase_service.create_purchase_order(self.session, self.supplier.id, items)
+        purchase_service.create_purchase_order(self.session, self.user.id, self.supplier.id, items)
+        purchase_service.create_purchase_order(self.session, self.user.id, self.supplier.id, items)
 
         orders = purchase_service.get_all_purchase_orders(self.session)
         self.assertEqual(len(orders), 2)
 
     def test_update_purchase_order(self):
         items = [{"product_id": self.product1.id, "quantity": 10, "price_per_unit": 8.0}]
-        order = purchase_service.create_purchase_order(self.session, self.supplier.id, items)
+        order = purchase_service.create_purchase_order(self.session, self.user.id, self.supplier.id, items)
 
         new_items = [{"product_id": self.product2.id, "quantity": 5, "price_per_unit": 15.0}]
         updated_order = purchase_service.update_purchase_order(self.session, order.id, self.supplier.id, new_items)
@@ -60,7 +65,7 @@ class TestPurchaseService(unittest.TestCase):
 
     def test_delete_purchase_order(self):
         items = [{"product_id": self.product1.id, "quantity": 10, "price_per_unit": 8.0}]
-        order = purchase_service.create_purchase_order(self.session, self.supplier.id, items)
+        order = purchase_service.create_purchase_order(self.session, self.user.id, self.supplier.id, items)
         order_id = order.id
 
         purchase_service.delete_purchase_order(self.session, order_id)
@@ -69,7 +74,7 @@ class TestPurchaseService(unittest.TestCase):
 
     def test_receive_purchase_order(self):
         items = [{"product_id": self.product1.id, "quantity": 10, "price_per_unit": 8.0}]
-        order = purchase_service.create_purchase_order(self.session, self.supplier.id, items)
+        order = purchase_service.create_purchase_order(self.session, self.user.id, self.supplier.id, items)
 
         initial_stock = self.product1.stock_quantity
         purchase_service.receive_purchase_order(self.session, order.id)
@@ -82,7 +87,7 @@ class TestPurchaseService(unittest.TestCase):
 
     def test_receive_already_received_order(self):
         items = [{"product_id": self.product1.id, "quantity": 10, "price_per_unit": 8.0}]
-        order = purchase_service.create_purchase_order(self.session, self.supplier.id, items)
+        order = purchase_service.create_purchase_order(self.session, self.user.id, self.supplier.id, items)
         purchase_service.receive_purchase_order(self.session, order.id)
 
         with self.assertRaises(ValueError):
