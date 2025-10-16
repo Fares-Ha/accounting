@@ -1,8 +1,10 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox, QDialog, QFormLayout, QLineEdit, QSpinBox, QDialogButtonBox, QComboBox
 from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtGui import QColor
 from ..database import models
 from ..database.database import get_db
 from ..core import product_service, category_service
+from .stock_adjustment_dialog import StockAdjustmentDialog
 
 class InventoryHistoryDialog(QDialog):
     def __init__(self, product_id):
@@ -119,9 +121,6 @@ class InventoryWidget(QWidget):
         product_id = int(self.table.item(selected_row, 0).text())
         dialog = InventoryHistoryDialog(product_id)
         dialog.exec()
-
-from PyQt6.QtGui import QColor
-from .stock_adjustment_dialog import StockAdjustmentDialog
 
     def load_products(self):
         self.table.setRowCount(0)

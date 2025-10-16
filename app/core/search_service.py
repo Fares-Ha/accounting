@@ -1,6 +1,6 @@
 from sqlalchemy import or_
 from ..database.models import Customer, Product, SalesOrder, PurchaseOrder
-from ..database.session import get_db
+from ..database.database import get_db
 
 def global_search(db_session, term):
     """
