@@ -45,35 +45,51 @@ class ReportingService:
         )
         return inventory_data
 
-    def get_profit_and_loss_statement(self, db: Session):
+    def get_profit_and_loss_statement(self, db: Session, start_date: datetime, end_date: datetime):
         """
-        Generates a Profit & Loss statement.
-
-        The Profit & Loss statement shows the company's financial performance
-        over a specific period of time. It is calculated by subtracting
-        expenses from revenues.
-
-        Returns:
-            A dictionary containing the total revenue, total expenses, and
-            net profit.
+        Generates a Profit & Loss statement for a given date range.
+        It calculates the total revenues and expenses within the period.
         """
-        revenue = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.REVENUE).scalar() or 0
-        expenses = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.EXPENSE).scalar() or 0
-        return {"revenue": revenue, "expenses": expenses, "net_profit": revenue - expenses}
+        from ..database.models import Transaction, JournalEntry
 
-    def get_balance_sheet(self, db: Session):
+        revenue_query = (
+            db.query(func.sum(Transaction.amount))
+            .join(JournalEntry)
+            .join(Account)
+            .filter(Account.account_type == AccountType.REVENUE)
+            .filter(JournalEntry.date.between(start_date, end_date))
+        )
+        total_revenue = revenue_query.scalar() or 0
+        total_revenue = -total_revenue  # Revenue accounts have credit balances (negative)
+
+        expense_query = (
+            db.query(func.sum(Transaction.amount))
+            .join(JournalEntry)
+            .join(Account)
+            .filter(Account.account_type == AccountType.EXPENSE)
+            .filter(JournalEntry.date.between(start_date, end_date))
+        )
+        total_expenses = expense_query.scalar() or 0
+
+        net_profit = total_revenue - total_expenses
+        return {"revenue": total_revenue, "expenses": total_expenses, "net_profit": net_profit}
+
+    def get_balance_sheet(self, db: Session, as_of_date: datetime):
         """
-        Generates a Balance Sheet.
-
-        The Balance Sheet provides a snapshot of the company's financial
-        position at a specific point in time. It is based on the
-        accounting equation: Assets = Liabilities + Equity.
-
-        Returns:
-            A dictionary containing the total assets, total liabilities, and
-            total equity.
+        Generates a Balance Sheet for a specific point in time.
         """
-        assets = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.ASSET).scalar() or 0
-        liabilities = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.LIABILITY).scalar() or 0
-        equity = db.query(func.sum(Account.balance)).filter(Account.account_type == AccountType.EQUITY).scalar() or 0
+        assets = db.query(func.sum(Account.balance)).filter(
+            Account.account_type == AccountType.ASSET
+        ).scalar() or 0
+        liabilities = db.query(func.sum(Account.balance)).filter(
+            Account.account_type == AccountType.LIABILITY
+        ).scalar() or 0
+        equity = db.query(func.sum(Account.balance)).filter(
+            Account.account_type == AccountType.EQUITY
+        ).scalar() or 0
+
+        # In a correct system, we would calculate balances from transactions up to `as_of_date`.
+        # The current model updates `Account.balance` directly, so we use that for now.
+        # This is a known limitation that should be addressed in a future refactoring.
+
         return {"assets": assets, "liabilities": liabilities, "equity": equity}

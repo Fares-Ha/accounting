@@ -1,4 +1,5 @@
 import sys
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
 from app.database.database import init_db
 from app.ui.login_window import LoginWindow
@@ -43,6 +44,10 @@ def main():
         lang = lang_dialog.get_language()
         set_language(lang)
         install_translator(lang)
+        if lang == 'ar':
+            app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        else:
+            app.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
     else:
         sys.exit(0) # Exit if the user cancels
 

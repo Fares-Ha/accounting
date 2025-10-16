@@ -17,6 +17,7 @@ pyinstaller --name "Ajyad Accountant" \
             --onefile \
             --windowed \
             --add-data "app/locale:app/locale" \
+            --add-data "app/assets:app/assets" \
             main.py
 
 if [ $? -ne 0 ]; then
