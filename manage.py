@@ -1,7 +1,14 @@
 import argparse
+import sys
+from sqlalchemy import inspect
 from app.database.database import SessionLocal, engine
 from app.core.auth import create_user
 from app.database.models import UserRole, Base
+
+def is_db_initialized():
+    """Checks if the database has been initialized by checking for the 'users' table."""
+    inspector = inspect(engine)
+    return inspector.has_table("users")
 
 def init_db(args):
     """Initializes the database and creates tables."""
@@ -10,6 +17,10 @@ def init_db(args):
 
 def create_admin(args):
     """Creates a new admin user."""
+    if not is_db_initialized():
+        print("Error: The database has not been initialized. Please run 'python manage.py init-db' first.")
+        sys.exit(1)
+
     db = SessionLocal()
     try:
         create_user(db, args.username, args.password, UserRole.ADMIN)
