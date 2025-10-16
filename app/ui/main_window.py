@@ -13,6 +13,7 @@ from .ledger_widget import LedgerWidget
 from .reporting_widget import ReportingWidget
 from .chart_of_accounts_widget import ChartOfAccountsWidget
 from .notification_widget import NotificationWidget
+from .expense_widget import ExpenseWidget
 from ..database.models import UserRole
 
 class MainWindow(QMainWindow):
@@ -84,6 +85,11 @@ class MainWindow(QMainWindow):
         if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
             self.reporting_widget = ReportingWidget()
             self.tabs.addTab(self.reporting_widget, self.tr("Reporting"))
+
+        # Add the expense widget - Admin and Accountant only
+        if self.user.role in [UserRole.ADMIN, UserRole.ACCOUNTANT]:
+            self.expense_widget = ExpenseWidget(self.user)
+            self.tabs.addTab(self.expense_widget, self.tr("Expenses"))
 
         # Add the notification widget
         self.notification_widget = NotificationWidget()
