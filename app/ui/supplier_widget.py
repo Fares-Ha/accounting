@@ -7,7 +7,6 @@ class SupplierWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.supplier_service = SupplierService()
-        self.db_session = next(get_db())
         self.init_ui()
         self.load_suppliers()
 
@@ -37,14 +36,15 @@ class SupplierWidget(QWidget):
         layout.addWidget(self.table)
 
     def load_suppliers(self):
-        suppliers = self.supplier_service.get_all_suppliers(self.db_session)
-        self.table.setRowCount(len(suppliers))
-        for row, supplier in enumerate(suppliers):
-            self.table.setItem(row, 0, QTableWidgetItem(str(supplier.id)))
-            self.table.setItem(row, 1, QTableWidgetItem(supplier.name))
-            self.table.setItem(row, 2, QTableWidgetItem(supplier.email))
-            self.table.setItem(row, 3, QTableWidgetItem(supplier.phone))
-            self.table.setItem(row, 4, QTableWidgetItem(supplier.address))
+        with get_db() as db:
+            suppliers = self.supplier_service.get_all_suppliers(db)
+            self.table.setRowCount(len(suppliers))
+            for row, supplier in enumerate(suppliers):
+                self.table.setItem(row, 0, QTableWidgetItem(str(supplier.id)))
+                self.table.setItem(row, 1, QTableWidgetItem(supplier.name))
+                self.table.setItem(row, 2, QTableWidgetItem(supplier.email))
+                self.table.setItem(row, 3, QTableWidgetItem(supplier.phone))
+                self.table.setItem(row, 4, QTableWidgetItem(supplier.address))
 
     def add_supplier(self):
         dialog = SupplierDialog()
@@ -59,11 +59,12 @@ class SupplierWidget(QWidget):
 
         selected_row = selected_rows[0].row()
         supplier_id = int(self.table.item(selected_row, 0).text())
-        supplier = self.supplier_service.get_supplier_by_id(self.db_session, supplier_id)
-        if supplier:
-            dialog = SupplierDialog(supplier=supplier)
-            if dialog.exec():
-                self.load_suppliers()
+        with get_db() as db:
+            supplier = self.supplier_service.get_supplier_by_id(db, supplier_id)
+            if supplier:
+                dialog = SupplierDialog(supplier=supplier)
+                if dialog.exec():
+                    self.load_suppliers()
 
     def delete_supplier(self):
         selected_rows = self.table.selectionModel().selectedRows()
@@ -78,5 +79,6 @@ class SupplierWidget(QWidget):
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
         if reply == QMessageBox.StandardButton.Yes:
-            self.supplier_service.delete_supplier(self.db_session, supplier_id)
+            with get_db() as db:
+                self.supplier_service.delete_supplier(db, supplier_id)
             self.load_suppliers()
