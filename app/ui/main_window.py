@@ -14,15 +14,18 @@ from .reporting_widget import ReportingWidget
 from .chart_of_accounts_widget import ChartOfAccountsWidget
 from .notification_widget import NotificationWidget
 from .expense_widget import ExpenseWidget
-from ..database.models import UserRole
+from ..database.models import User, UserRole
 
 class MainWindow(QMainWindow):
     """
     The main application window, which appears after successful login.
     """
-    def __init__(self, user):
+    def __init__(self, user_id):
         super().__init__()
-        self.user = user
+
+        with get_db() as db:
+            self.user = db.query(User).filter(User.id == user_id).first()
+
         self.setWindowTitle(self.tr("Ajyad Accountant - Logged in as {} ({})").format(self.user.username, self.user.role.value))
         self.setMinimumSize(800, 600)
 
