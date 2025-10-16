@@ -1,3 +1,6 @@
+"""
+This module provides the ReportingService, which is responsible for generating various reports, such as the Profit & Loss statement, Balance Sheet, sales report, and inventory report. The ReportingService is used by the ReportingWidget to display these reports to the user.
+"""
 from sqlalchemy.orm import Session
 from ..database.models import SalesOrder, SalesOrderItem, Product, Account, AccountType
 from sqlalchemy import func

@@ -1,6 +1,7 @@
 import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.database import models
 from app.database.models import Base, Product, InventoryMovement, InventoryMovementReason
 from app.core import product_service
 
@@ -10,6 +11,11 @@ class TestProductService(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.db = self.Session()
+
+        # Create a dummy user
+        self.user = models.User(id=1, username="testuser", hashed_password="password", role=models.UserRole.ADMIN)
+        self.db.add(self.user)
+        self.db.commit()
 
     def tearDown(self):
         Base.metadata.drop_all(self.engine)
@@ -43,7 +49,7 @@ class TestProductService(unittest.TestCase):
         product = product_service.create_product(self.db, name="Initial Product", description="", price=100, stock_quantity=20)
 
         # Act
-        product_service.update_product(self.db, product.id, name="Updated Product", description="Desc", price=150, stock_quantity=15)
+        product_service.update_product(self.db, self.user.id, product.id, name="Updated Product", description="Desc", price=150, stock_quantity=15)
 
         # Assert
         updated_product = self.db.query(Product).get(product.id)

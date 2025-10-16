@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
 from ..database import models
 from . import product_service, accounting_service
+from .audit_service import AuditService
 
-def create_sales_order(db: Session, customer_id: int, items: list[dict]):
+audit_service = AuditService()
+
+def create_sales_order(db: Session, user_id: int, customer_id: int, items: list[dict]):
     """
     Creates a new sales order and updates product stock.
     'items' is a list of dicts, each with 'product_id', 'quantity'.
@@ -55,6 +58,13 @@ def create_sales_order(db: Session, customer_id: int, items: list[dict]):
         # For now, we'll just log the error.
         print(f"Failed to create journal entry for sale: {e}")
 
+    # Create audit log
+    audit_service.create_audit_log(
+        db,
+        user_id=user_id,
+        action="CREATE_SALES_ORDER",
+        details=f"Sales order #{db_order.id} created for customer #{customer_id}"
+    )
 
     return db_order
 

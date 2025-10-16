@@ -84,4 +84,23 @@ The Reporting tab allows you to generate various reports, including:
 
 ### Notifications
 
-The Notifications tab displays important alerts, such as low stock notifications.
+The Notifications tab displays important alerts, including:
+
+*   Low stock notifications
+*   Overdue invoices
+*   Upcoming payment dues
+
+### Audit Trail
+
+The application now includes a comprehensive audit trail that logs all important events, such as:
+
+*   Sales order creation
+*   Purchase order creation
+*   User login attempts
+*   Manual stock adjustments
+
+This provides a complete history of all actions performed in the application, which can be useful for auditing and security purposes.
+
+### Exporting Reports
+
+You can export reports to PDF and Excel by clicking the "Export to PDF" or "Export to Excel" buttons in the Reporting tab. This allows you to easily share reports with others or use them in other applications.

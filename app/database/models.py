@@ -247,6 +247,9 @@ class JournalEntry(Base):
     transactions = relationship("Transaction", back_populates="journal_entry", cascade="all, delete-orphan")
 
 
+from datetime import datetime
+
+
 class Transaction(Base):
     """
     Transaction model representing a single debit or credit.
@@ -261,3 +264,18 @@ class Transaction(Base):
 
     journal_entry = relationship("JournalEntry", back_populates="transactions")
     account = relationship("Account")
+
+
+class AuditTrail(Base):
+    __tablename__ = 'audit_trails'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    action = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    details = Column(String)
+
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<AuditTrail(user='{self.user.username}', action='{self.action}')>"

@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
 from ..database import models
 from ..database.models import InventoryMovementReason
+from .audit_service import AuditService
 
-def adjust_stock_quantity(db: Session, product: models.Product, quantity_change: int, reason: InventoryMovementReason):
+audit_service = AuditService()
+
+def adjust_stock_quantity(db: Session, product: models.Product, quantity_change: int, reason: InventoryMovementReason, user_id: int = None):
     """
     Adjusts the stock quantity of a product and records the movement.
     """
@@ -13,6 +16,15 @@ def adjust_stock_quantity(db: Session, product: models.Product, quantity_change:
         reason=reason
     )
     db.add(movement)
+
+    if user_id:
+        audit_service.create_audit_log(
+            db,
+            user_id=user_id,
+            action="STOCK_ADJUSTMENT",
+            details=f"Product '{product.name}' stock changed by {quantity_change} due to {reason.value}"
+        )
+
     db.commit()
     db.refresh(product)
 
@@ -49,7 +61,7 @@ def get_product(db: Session, product_id: int):
     """
     return db.query(models.Product).filter(models.Product.id == product_id).first()
 
-def update_product(db: Session, product_id: int, name: str, description: str, price: int, stock_quantity: int, category_id: int = None, low_stock_threshold: int = 0):
+def update_product(db: Session, user_id: int, product_id: int, name: str, description: str, price: int, stock_quantity: int, category_id: int = None, low_stock_threshold: int = 0):
     """
     Updates an existing product.
     """
@@ -66,7 +78,7 @@ def update_product(db: Session, product_id: int, name: str, description: str, pr
         # Adjust stock if it has changed
         if stock_quantity != db_product.stock_quantity:
             quantity_change = stock_quantity - db_product.stock_quantity
-            adjust_stock_quantity(db, db_product, quantity_change, InventoryMovementReason.MANUAL_UPDATE)
+            adjust_stock_quantity(db, db_product, quantity_change, InventoryMovementReason.MANUAL_UPDATE, user_id)
 
     return db_product
 
@@ -92,10 +104,10 @@ def get_inventory_movements(db: Session, product_id: int):
     """
     return db.query(models.InventoryMovement).filter(models.InventoryMovement.product_id == product_id).order_by(models.InventoryMovement.created_at.desc()).all()
 
-def adjust_stock(db: Session, product_id: int, quantity_change: int, reason: models.InventoryMovementReason):
+def adjust_stock(db: Session, user_id: int, product_id: int, quantity_change: int, reason: models.InventoryMovementReason):
     product = get_product(db, product_id)
     if not product:
         return None
 
-    adjust_stock_quantity(db, product, quantity_change, reason)
+    adjust_stock_quantity(db, product, quantity_change, reason, user_id)
     return product

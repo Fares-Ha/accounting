@@ -123,8 +123,9 @@ class PurchaseOrderDialog(QDialog):
 
 
 class PurchaseOrderWidget(QWidget):
-    def __init__(self):
+    def __init__(self, current_user):
         super().__init__()
+        self.current_user = current_user
         self.layout = QVBoxLayout(self)
 
         self.table = QTableWidget()
@@ -181,7 +182,7 @@ class PurchaseOrderWidget(QWidget):
             if data:
                 try:
                     with get_db() as db:
-                        purchase_service.create_purchase_order(db, **data)
+                        purchase_service.create_purchase_order(db, user_id=self.current_user.id, **data)
                     self.load_orders()
                 except Exception as e:
                     QMessageBox.critical(self, self.tr("Error"), self.tr("Could not create purchase order: {e}"))

@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
 from ..database import models
 from . import product_service, accounting_service
+from .audit_service import AuditService
 
-def create_purchase_order(db: Session, supplier_id: int, items: list[dict]):
+audit_service = AuditService()
+
+def create_purchase_order(db: Session, user_id: int, supplier_id: int, items: list[dict]):
     """
     Creates a new purchase order.
     'items' is a list of dicts, each with 'product_id', 'quantity', 'price_per_unit'.
@@ -42,6 +45,14 @@ def create_purchase_order(db: Session, supplier_id: int, items: list[dict]):
         {"account_id": cash_account.id, "amount": -total_amount},
     ]
     accounting_service.create_journal_entry(db, f"Purchase Order #{db_order.id}", transactions)
+
+    # Create audit log
+    audit_service.create_audit_log(
+        db,
+        user_id=user_id,
+        action="CREATE_PURCHASE_ORDER",
+        details=f"Purchase order #{db_order.id} created for supplier #{supplier_id}"
+    )
 
     return db_order
 
