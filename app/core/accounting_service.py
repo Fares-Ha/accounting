@@ -18,7 +18,13 @@ def get_accounts(db: Session):
     """
     return db.query(models.Account).all()
 
-def create_journal_entry(db: Session, description: str, transactions: list[dict]):
+def get_journal_entry(db: Session, entry_id: int):
+    """
+    Retrieves a single journal entry by its ID.
+    """
+    return db.query(models.JournalEntry).filter(models.JournalEntry.id == entry_id).first()
+
+def create_journal_entry(db: Session, description: str, transactions: list[dict], date: datetime = None):
     """
     Creates a new journal entry with a list of transactions.
 
@@ -34,6 +40,7 @@ def create_journal_entry(db: Session, description: str, transactions: list[dict]
             - account_id: The ID of the account.
             - amount: The amount of the transaction. Positive for a
                 debit, negative for a credit.
+        date: The date of the transaction. Defaults to now.
     """
     # Validate that the journal entry is balanced. The sum of all
     # transactions must be zero.
@@ -43,7 +50,7 @@ def create_journal_entry(db: Session, description: str, transactions: list[dict]
 
     # Create the journal entry.
     db_journal_entry = models.JournalEntry(
-        date=datetime.now(),
+        date=date or datetime.now(),
         description=description
     )
     db.add(db_journal_entry)

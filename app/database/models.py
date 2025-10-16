@@ -279,3 +279,35 @@ class AuditTrail(Base):
 
     def __repr__(self):
         return f"<AuditTrail(user='{self.user.username}', action='{self.action}')>"
+
+
+class ExpenseCategory(Base):
+    """
+    ExpenseCategory model for categorizing expenses.
+    """
+    __tablename__ = "expense_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True, index=True)
+
+    expenses = relationship("Expense", back_populates="category")
+
+
+class Expense(Base):
+    """
+    Expense model for tracking business expenses.
+    """
+    __tablename__ = "expenses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    description = Column(String, nullable=False)
+    amount = Column(Integer, nullable=False)  # Stored in cents
+    expense_date = Column(DateTime(timezone=True), nullable=False)
+    category_id = Column(Integer, ForeignKey("expense_categories.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    journal_entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=True) # Optional link
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    category = relationship("ExpenseCategory", back_populates="expenses")
+    user = relationship("User")
+    journal_entry = relationship("JournalEntry")
