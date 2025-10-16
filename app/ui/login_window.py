@@ -38,10 +38,15 @@ class LoginWindow(QWidget):
         password = self.password_input.text()
         db = SessionLocal()
         user = authenticate_user(db, username, password)
+
+        user_id = None
+        if user:
+            user_id = user.id
+
         db.close()
 
-        if user:
-            self.login_successful.emit(user.id)
+        if user_id is not None:
+            self.login_successful.emit(user_id)
             self.close()
         else:
             QMessageBox.warning(self, self.tr("Login Failed"), self.tr("Invalid username or password."))
