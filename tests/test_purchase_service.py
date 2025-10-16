@@ -2,7 +2,8 @@ import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.database import models
-from app.core import purchase_service, supplier_service, product_service
+from app.core import purchase_service, product_service
+from app.core.supplier_service import SupplierService
 
 class TestPurchaseService(unittest.TestCase):
     def setUp(self):
@@ -17,7 +18,8 @@ class TestPurchaseService(unittest.TestCase):
         self.session.commit()
 
         # Create a dummy supplier and product for testing
-        self.supplier = supplier_service.create_supplier(self.session, "Test Supplier", "supplier@test.com", "111222333", "123 Test Street")
+        self.supplier_service = SupplierService()
+        self.supplier = self.supplier_service.create_supplier(self.session, "Test Supplier", "supplier@test.com", "111222333", "123 Test Street")
         self.product1 = product_service.create_product(self.session, "Test Product 1", "SKU001", 10.0, 100, 1)
         self.product2 = product_service.create_product(self.session, "Test Product 2", "SKU002", 20.0, 50, 1)
 
