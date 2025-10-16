@@ -1,6 +1,5 @@
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel, QLineEdit, QPushButton, QToolBar, QDialog
-from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import QCoreApplication, QTimer
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel, QLineEdit
+from PyQt6.QtCore import QCoreApplication
 from ..database.session import get_db
 from ..core.search_service import global_search
 from .search_results_widget import SearchResultsWidget
@@ -26,8 +25,6 @@ class MainWindow(QMainWindow):
         self.user = user
         self.setWindowTitle(self.tr("Ajyad Accountant - Logged in as {} ({})").format(self.user.username, self.user.role.value))
         self.setMinimumSize(800, 600)
-
-        self.setup_toolbar()
 
         # Create a central widget and a layout
         central_widget = QWidget()
@@ -107,55 +104,6 @@ class MainWindow(QMainWindow):
         # Connect the search bar signal
         self.search_bar.returnPressed.connect(self.execute_search)
         self.search_results_widget = None
-
-        # Start the notification timer
-        self.notification_timer = QTimer(self)
-        self.notification_timer.timeout.connect(self.update_notification_count)
-        self.notification_timer.start(60000)  # Update every 60 seconds
-        self.update_notification_count()
-
-    def setup_toolbar(self):
-        """
-        Sets up the main toolbar with a notification button.
-        """
-        toolbar = QToolBar("Main Toolbar")
-        self.addToolBar(toolbar)
-
-        self.notification_button = QPushButton(self.tr("Notifications"))
-        self.notification_button.clicked.connect(self.show_notifications)
-        toolbar.addWidget(self.notification_button)
-
-    def update_notification_count(self):
-        """
-        Updates the notification count on the toolbar button.
-        """
-        with get_db() as db:
-            low_stock_count = len(self.notification_widget.notification_service.get_low_stock_notifications(db))
-            overdue_count = len(self.notification_widget.notification_service.get_overdue_invoices(db))
-            upcoming_count = len(self.notification_widget.notification_service.get_upcoming_payment_dues(db))
-            total_notifications = low_stock_count + overdue_count + upcoming_count
-
-        self.notification_button.setText(self.tr("Notifications ({})").format(total_notifications))
-
-    def show_notifications(self):
-        """
-        Displays the notification widget in a dialog.
-        """
-        dialog = QDialog(self)
-        dialog.setWindowTitle(self.tr("Notifications"))
-        layout = QVBoxLayout(dialog)
-
-        # Re-use the existing notification_widget and reload its data
-        self.notification_widget.load_notifications()
-        layout.addWidget(self.notification_widget)
-
-        # Add a button to close the dialog
-        close_button = QPushButton(self.tr("Close"))
-        close_button.clicked.connect(dialog.close)
-        layout.addWidget(close_button)
-
-        dialog.setLayout(layout)
-        dialog.exec()
 
     def execute_search(self):
         """
