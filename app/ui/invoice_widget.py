@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QComboBox, QMessageBox
 from ..core import invoice_service, sales_service
-from ..database import get_db
+from ..database.database import get_db
 
 class InvoiceWidget(QWidget):
     def __init__(self, parent=None):
