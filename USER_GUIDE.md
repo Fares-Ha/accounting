@@ -4,41 +4,33 @@ Welcome to Ajyad Accountant! This guide will help you get started with the appli
 
 ## Installation
 
-To install Ajyad Accountant, you will need to have Python installed on your computer. You can download it from [python.org](https://www.python.org/downloads/).
+1.  Download the installer for your operating system (Windows, macOS, or Linux).
+2.  Run the installer and follow the on-screen instructions.
+3.  Once the installation is complete, you can launch Ajyad Accountant from your applications menu or desktop shortcut.
 
-Once you have Python installed, follow these steps:
-
-1.  Download the application files.
-2.  Open a terminal or command prompt and navigate to the application directory.
-3.  Install the required dependencies by running the following command:
-
-    ```
-    pip install -r requirements.txt
-    ```
-
-4.  Initialize the database by running the following command:
-
-    ```
-    python manage.py init-db
-    ```
-
-5.  Create an admin user by running the following command:
-
-    ```
-    python manage.py create-admin <username> <password>
-    ```
-
-    Replace `<username>` and `<password>` with your desired username and password.
+The first time you run the application, it will automatically set up the local database for you.
 
 ## Getting Started
 
-To start the application, run the following command:
+The first time you launch the application, you will be prompted to create an **Admin** user. This user will have full access to all features of the application.
 
-```
-python main.py
-```
+1.  On the first launch, an "Admin User Creation" screen will appear.
+2.  Enter your desired username and a strong password.
+3.  Click "Create Admin".
 
-You will be prompted to log in with the username and password you created in the previous step.
+After creating the admin user, you will be taken to the login screen.
+
+### Language Selection
+
+On the login screen, you can choose your preferred language (English or Arabic) from the dropdown menu before logging in. The application interface will be translated accordingly, and the layout will switch to Right-to-Left for Arabic.
+
+## User Roles
+
+Ajyad Accountant has three user roles with different levels of access:
+
+-   **Admin:** Has full access to all features, including user management, financial reports, and all settings.
+-   **Accountant:** Has access to all accounting, purchasing, and reporting features, but cannot manage users.
+-   **Sales:** Has access to sales, customer, and inventory modules. This role cannot access sensitive financial reports or purchasing information.
 
 ## Features
 

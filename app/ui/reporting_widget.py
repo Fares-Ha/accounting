@@ -42,9 +42,29 @@ class ReportingWidget(QWidget):
 
     def setup_pnl_tab(self):
         layout = QVBoxLayout(self.pnl_tab)
-        self.refresh_pnl_button = QPushButton(self.tr("Refresh Report"))
+
+        # Date filters
+        filter_layout = QHBoxLayout()
+        self.pnl_start_date_edit = QDateEdit(calendarPopup=True)
+        self.pnl_start_date_edit.setDateTime(QDateTime.currentDateTime().addMonths(-1))
+        self.pnl_end_date_edit = QDateEdit(calendarPopup=True)
+        self.pnl_end_date_edit.setDateTime(QDateTime.currentDateTime())
+        filter_layout.addWidget(QLabel(self.tr("Start Date:")))
+        filter_layout.addWidget(self.pnl_start_date_edit)
+        filter_layout.addWidget(QLabel(self.tr("End Date:")))
+        filter_layout.addWidget(self.pnl_end_date_edit)
+        layout.addLayout(filter_layout)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+        self.refresh_pnl_button = QPushButton(self.tr("Generate Report"))
         self.refresh_pnl_button.clicked.connect(self.generate_pnl_report)
-        layout.addWidget(self.refresh_pnl_button)
+        self.export_pnl_pdf_button = QPushButton(self.tr("Export to PDF"))
+        self.export_pnl_pdf_button.clicked.connect(self.export_pnl_to_pdf)
+        button_layout.addWidget(self.refresh_pnl_button)
+        button_layout.addWidget(self.export_pnl_pdf_button)
+        layout.addLayout(button_layout)
+
         self.pnl_table = QTableWidget()
         self.pnl_table.setColumnCount(2)
         self.pnl_table.setHorizontalHeaderLabels([self.tr("Account"), self.tr("Amount")])
@@ -53,20 +73,55 @@ class ReportingWidget(QWidget):
         self.generate_pnl_report()
 
     def generate_pnl_report(self):
-        report_data = self.reporting_service.get_profit_and_loss_statement(self.db_session)
+        start_date = self.pnl_start_date_edit.dateTime().toPyDateTime()
+        end_date = self.pnl_end_date_edit.dateTime().toPyDateTime()
+        with get_db() as db:
+            report_data = self.reporting_service.get_profit_and_loss_statement(db, start_date, end_date)
+
         self.pnl_table.setRowCount(3)
         self.pnl_table.setItem(0, 0, QTableWidgetItem(self.tr("Total Revenue")))
-        self.pnl_table.setItem(0, 1, QTableWidgetItem(f"{report_data['revenue'] / 100:.2f}"))
+        self.pnl_table.setItem(0, 1, QTableWidgetItem(f"{report_data['revenue']:.2f}"))
         self.pnl_table.setItem(1, 0, QTableWidgetItem(self.tr("Total Expenses")))
-        self.pnl_table.setItem(1, 1, QTableWidgetItem(f"{report_data['expenses'] / 100:.2f}"))
+        self.pnl_table.setItem(1, 1, QTableWidgetItem(f"{report_data['expenses']:.2f}"))
         self.pnl_table.setItem(2, 0, QTableWidgetItem(self.tr("Net Profit")))
-        self.pnl_table.setItem(2, 1, QTableWidgetItem(f"{report_data['net_profit'] / 100:.2f}"))
+        net_profit_item = QTableWidgetItem(f"{report_data['net_profit']:.2f}")
+        self.pnl_table.setItem(2, 1, net_profit_item)
+
+    def export_pnl_to_pdf(self):
+        start_date = self.pnl_start_date_edit.dateTime().toPyDateTime()
+        end_date = self.pnl_end_date_edit.dateTime().toPyDateTime()
+        with get_db() as db:
+            report_data = self.reporting_service.get_profit_and_loss_statement(db, start_date, end_date)
+
+        file_path, _ = QFileDialog.getSaveFileName(self, self.tr("Save PDF"), "", "PDF Files (*.pdf)")
+        if file_path:
+            try:
+                self.export_service.export_pnl_report_to_pdf(report_data, start_date, end_date, file_path)
+                QMessageBox.information(self, self.tr("Export Successful"), self.tr("Profit & Loss report exported to PDF successfully."))
+            except Exception as e:
+                QMessageBox.critical(self, self.tr("Export Error"), self.tr(f"Could not export report: {e}"))
 
     def setup_balance_sheet_tab(self):
         layout = QVBoxLayout(self.balance_sheet_tab)
-        self.refresh_balance_sheet_button = QPushButton(self.tr("Refresh Report"))
+
+        # Date filter
+        filter_layout = QHBoxLayout()
+        self.balance_sheet_date_edit = QDateEdit(calendarPopup=True)
+        self.balance_sheet_date_edit.setDateTime(QDateTime.currentDateTime())
+        filter_layout.addWidget(QLabel(self.tr("As of Date:")))
+        filter_layout.addWidget(self.balance_sheet_date_edit)
+        layout.addLayout(filter_layout)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+        self.refresh_balance_sheet_button = QPushButton(self.tr("Generate Report"))
         self.refresh_balance_sheet_button.clicked.connect(self.generate_balance_sheet_report)
-        layout.addWidget(self.refresh_balance_sheet_button)
+        self.export_bs_pdf_button = QPushButton(self.tr("Export to PDF"))
+        self.export_bs_pdf_button.clicked.connect(self.export_balance_sheet_to_pdf)
+        button_layout.addWidget(self.refresh_balance_sheet_button)
+        button_layout.addWidget(self.export_bs_pdf_button)
+        layout.addLayout(button_layout)
+
         self.balance_sheet_table = QTableWidget()
         self.balance_sheet_table.setColumnCount(2)
         self.balance_sheet_table.setHorizontalHeaderLabels([self.tr("Account"), self.tr("Amount")])
@@ -75,14 +130,30 @@ class ReportingWidget(QWidget):
         self.generate_balance_sheet_report()
 
     def generate_balance_sheet_report(self):
-        report_data = self.reporting_service.get_balance_sheet(self.db_session)
+        as_of_date = self.balance_sheet_date_edit.dateTime().toPyDateTime()
+        with get_db() as db:
+            report_data = self.reporting_service.get_balance_sheet(db, as_of_date)
+
         self.balance_sheet_table.setRowCount(3)
         self.balance_sheet_table.setItem(0, 0, QTableWidgetItem(self.tr("Total Assets")))
-        self.balance_sheet_table.setItem(0, 1, QTableWidgetItem(f"{report_data['assets'] / 100:.2f}"))
+        self.balance_sheet_table.setItem(0, 1, QTableWidgetItem(f"{report_data['assets']:.2f}"))
         self.balance_sheet_table.setItem(1, 0, QTableWidgetItem(self.tr("Total Liabilities")))
-        self.balance_sheet_table.setItem(1, 1, QTableWidgetItem(f"{report_data['liabilities'] / 100:.2f}"))
+        self.balance_sheet_table.setItem(1, 1, QTableWidgetItem(f"{report_data['liabilities']:.2f}"))
         self.balance_sheet_table.setItem(2, 0, QTableWidgetItem(self.tr("Total Equity")))
-        self.balance_sheet_table.setItem(2, 1, QTableWidgetItem(f"{report_data['equity'] / 100:.2f}"))
+        self.balance_sheet_table.setItem(2, 1, QTableWidgetItem(f"{report_data['equity']:.2f}"))
+
+    def export_balance_sheet_to_pdf(self):
+        as_of_date = self.balance_sheet_date_edit.dateTime().toPyDateTime()
+        with get_db() as db:
+            report_data = self.reporting_service.get_balance_sheet(db, as_of_date)
+
+        file_path, _ = QFileDialog.getSaveFileName(self, self.tr("Save PDF"), "", "PDF Files (*.pdf)")
+        if file_path:
+            try:
+                self.export_service.export_balance_sheet_report_to_pdf(report_data, as_of_date, file_path)
+                QMessageBox.information(self, self.tr("Export Successful"), self.tr("Balance Sheet report exported to PDF successfully."))
+            except Exception as e:
+                QMessageBox.critical(self, self.tr("Export Error"), self.tr(f"Could not export report: {e}"))
 
     def setup_inventory_report_tab(self):
         layout = QVBoxLayout(self.inventory_report_tab)

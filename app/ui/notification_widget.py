@@ -11,7 +11,6 @@ class NotificationWidget(QWidget):
         super().__init__(parent)
 
         self.notification_service = NotificationService()
-        self.db_session = next(get_db())
 
         layout = QVBoxLayout(self)
         self.notification_list = QListWidget()
@@ -21,21 +20,21 @@ class NotificationWidget(QWidget):
 
     def load_notifications(self):
         self.notification_list.clear()
+        with get_db() as db_session:
+            # Low stock notifications
+            low_stock_products = self.notification_service.get_low_stock_notifications(db_session)
+            for product in low_stock_products:
+                item = QListWidgetItem(self.tr("Low stock for {}: {} remaining").format(product.name, product.stock_quantity))
+                self.notification_list.addItem(item)
 
-        # Low stock notifications
-        low_stock_products = self.notification_service.get_low_stock_notifications(self.db_session)
-        for product in low_stock_products:
-            item = QListWidgetItem(f"Low stock for {product.name}: {product.stock_quantity} remaining")
-            self.notification_list.addItem(item)
+            # Overdue invoice notifications
+            overdue_invoices = self.notification_service.get_overdue_invoices(db_session)
+            for invoice in overdue_invoices:
+                item = QListWidgetItem(self.tr("Invoice #{} is overdue. Due date: {}").format(invoice.id, invoice.due_date.strftime('%Y-%m-%d')))
+                self.notification_list.addItem(item)
 
-        # Overdue invoice notifications
-        overdue_invoices = self.notification_service.get_overdue_invoices(self.db_session)
-        for invoice in overdue_invoices:
-            item = QListWidgetItem(f"Invoice #{invoice.id} is overdue. Due date: {invoice.due_date.strftime('%Y-%m-%d')}")
-            self.notification_list.addItem(item)
-
-        # Upcoming payment due notifications
-        upcoming_dues = self.notification_service.get_upcoming_payment_dues(self.db_session)
-        for invoice in upcoming_dues:
-            item = QListWidgetItem(f"Payment for invoice #{invoice.id} is due soon. Due date: {invoice.due_date.strftime('%Y-%m-%d')}")
-            self.notification_list.addItem(item)
+            # Upcoming payment due notifications
+            upcoming_dues = self.notification_service.get_upcoming_payment_dues(db_session)
+            for invoice in upcoming_dues:
+                item = QListWidgetItem(self.tr("Payment for invoice #{} is due soon. Due date: {}").format(invoice.id, invoice.due_date.strftime('%Y-%m-%d')))
+                self.notification_list.addItem(item)

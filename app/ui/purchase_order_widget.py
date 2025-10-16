@@ -204,10 +204,10 @@ class PurchaseOrderWidget(QWidget):
             if data:
                 try:
                     with get_db() as db:
-                        purchase_service.update_purchase_order(db, order_id, **data)
+                        purchase_service.update_purchase_order(db, user_id=self.current_user.id, order_id=order_id, **data)
                     self.load_orders()
                 except Exception as e:
-                    QMessageBox.critical(self, self.tr("Error"), self.tr("Could not update purchase order: {e}"))
+                    QMessageBox.critical(self, self.tr("Error"), self.tr(f"Could not update purchase order: {e}"))
 
     def delete_order(self, row_num):
         order_id = int(self.table.item(row_num, 0).text())
@@ -218,7 +218,7 @@ class PurchaseOrderWidget(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             try:
                 with get_db() as db:
-                    purchase_service.delete_purchase_order(db, order_id)
+                    purchase_service.delete_purchase_order(db, user_id=self.current_user.id, order_id=order_id)
                 self.load_orders()
             except ValueError as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))
@@ -242,7 +242,7 @@ class PurchaseOrderWidget(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             try:
                 with get_db() as db:
-                    purchase_service.receive_purchase_order(db, order_id)
+                    purchase_service.receive_purchase_order(db, user_id=self.current_user.id, order_id=order_id)
                 self.load_orders()
             except ValueError as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))
