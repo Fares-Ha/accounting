@@ -1,14 +1,13 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTabWidget, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QHBoxLayout,
-    QDateEdit
+    QDateEdit, QFileDialog, QMessageBox
 )
 from PyQt6.QtCore import QDateTime
 from PyQt6.QtGui import QColor
 from ..core.reporting_service import ReportingService
 from ..core.export_service import ExportService
 from ..database.database import get_db
-from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 class ReportingWidget(QWidget):
     """
@@ -19,7 +18,6 @@ class ReportingWidget(QWidget):
 
         self.reporting_service = ReportingService()
         self.export_service = ExportService()
-        self.db_session = next(get_db())
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
@@ -172,16 +170,17 @@ class ReportingWidget(QWidget):
         self.generate_inventory_report()
 
     def generate_inventory_report(self):
-        report_data = self.reporting_service.get_inventory_report(self.db_session)
-        self.inventory_report_table.setRowCount(len(report_data))
-        for row, (product_name, stock_quantity, low_stock_threshold) in enumerate(report_data):
-            self.inventory_report_table.setItem(row, 0, QTableWidgetItem(product_name))
-            self.inventory_report_table.setItem(row, 1, QTableWidgetItem(str(stock_quantity)))
-            self.inventory_report_table.setItem(row, 2, QTableWidgetItem(str(low_stock_threshold)))
+        with get_db() as db:
+            report_data = self.reporting_service.get_inventory_report(db)
+            self.inventory_report_table.setRowCount(len(report_data))
+            for row, (product_name, stock_quantity, low_stock_threshold) in enumerate(report_data):
+                self.inventory_report_table.setItem(row, 0, QTableWidgetItem(product_name))
+                self.inventory_report_table.setItem(row, 1, QTableWidgetItem(str(stock_quantity)))
+                self.inventory_report_table.setItem(row, 2, QTableWidgetItem(str(low_stock_threshold)))
 
-            if stock_quantity < low_stock_threshold:
-                for col in range(3):
-                    self.inventory_report_table.item(row, col).setBackground(QColor("orange"))
+                if stock_quantity < low_stock_threshold:
+                    for col in range(3):
+                        self.inventory_report_table.item(row, col).setBackground(QColor("orange"))
 
     def setup_sales_report_tab(self):
         layout = QVBoxLayout(self.sales_report_tab)
@@ -212,7 +211,7 @@ class ReportingWidget(QWidget):
         self.sales_report_table = QTableWidget()
         self.sales_report_table.setColumnCount(3)
         self.sales_report_table.setHorizontalHeaderLabels([self.tr("Product"), self.tr("Total Quantity"), self.tr("Total Revenue")])
-        self.sales_report_table.horizontalHeader().setSectionResizeMode(QHeaderV.ResizeMode.Stretch)
+        self.sales_report_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.sales_report_table)
 
         self.generate_sales_report()
@@ -220,17 +219,19 @@ class ReportingWidget(QWidget):
     def generate_sales_report(self):
         start_date = self.start_date_edit.dateTime().toPyDateTime()
         end_date = self.end_date_edit.dateTime().toPyDateTime()
-        report_data = self.reporting_service.get_sales_report(self.db_session, start_date, end_date)
-        self.sales_report_table.setRowCount(len(report_data))
-        for row, item in enumerate(report_data):
-            self.sales_report_table.setItem(row, 0, QTableWidgetItem(item.name))
-            self.sales_report_table.setItem(row, 1, QTableWidgetItem(str(item.total_quantity)))
-            self.sales_report_table.setItem(row, 2, QTableWidgetItem(f"{item.total_revenue / 100:.2f}"))
+        with get_db() as db:
+            report_data = self.reporting_service.get_sales_report(db, start_date, end_date)
+            self.sales_report_table.setRowCount(len(report_data))
+            for row, item in enumerate(report_data):
+                self.sales_report_table.setItem(row, 0, QTableWidgetItem(item.name))
+                self.sales_report_table.setItem(row, 1, QTableWidgetItem(str(item.total_quantity)))
+                self.sales_report_table.setItem(row, 2, QTableWidgetItem(f"{item.total_revenue / 100:.2f}"))
 
     def export_sales_report_to_pdf(self):
         start_date = self.start_date_edit.dateTime().toPyDateTime()
         end_date = self.end_date_edit.dateTime().toPyDateTime()
-        report_data = self.reporting_service.get_sales_report(self.db_session, start_date, end_date)
+        with get_db() as db:
+            report_data = self.reporting_service.get_sales_report(db, start_date, end_date)
 
         file_path, _ = QFileDialog.getSaveFileName(self, self.tr("Save PDF"), "", "PDF Files (*.pdf)")
         if file_path:
@@ -240,7 +241,8 @@ class ReportingWidget(QWidget):
     def export_sales_report_to_excel(self):
         start_date = self.start_date_edit.dateTime().toPyDateTime()
         end_date = self.end_date_edit.dateTime().toPyDateTime()
-        report_data = self.reporting_service.get_sales_report(self.db_session, start_date, end_date)
+        with get_db() as db:
+            report_data = self.reporting_service.get_sales_report(db, start_date, end_date)
 
         file_path, _ = QFileDialog.getSaveFileName(self, self.tr("Save Excel"), "", "Excel Files (*.xlsx)")
         if file_path:
