@@ -27,8 +27,8 @@ class Application(QApplication):
         super().__init__(argv)
         self.main_window = None
 
-    def show_main_window(self, user):
-        self.main_window = MainWindow(user)
+    def show_main_window(self, user_id):
+        self.main_window = MainWindow(user_id)
         self.main_window.show()
 
 def main():

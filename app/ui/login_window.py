@@ -8,7 +8,7 @@ class LoginWindow(QWidget):
     """
     Login window for user authentication.
     """
-    login_successful = pyqtSignal(object)
+    login_successful = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -41,7 +41,7 @@ class LoginWindow(QWidget):
         db.close()
 
         if user:
-            self.login_successful.emit(user)
+            self.login_successful.emit(user.id)
             self.close()
         else:
             QMessageBox.warning(self, self.tr("Login Failed"), self.tr("Invalid username or password."))
