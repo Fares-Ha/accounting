@@ -1,10 +1,7 @@
 import sys
 from PyQt6.QtCore import Qt
-<<<<<<< HEAD
 from PyQt6.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
-=======
-from PyQt.QtWidgets import QApplication
->>>>>>> 2ccaa1e7631736f1020b7b86f06fa249529b327b
+from PyQt6.QtWidgets import QApplication
 from app.ui.login_window import LoginWindow
 from app.ui.main_window import MainWindow
 from app.i18n import set_language
