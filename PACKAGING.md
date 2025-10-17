@@ -1,52 +1,88 @@
-# Packaging Ajyad Accountant
+# How to Package Ajyad Accountant
 
-This guide provides instructions for packaging the Ajyad Accountant application for Windows, macOS, and Linux.
+This guide provides instructions for packaging the Ajyad Accountant application for **Windows, macOS, and Linux**.
 
-## Prerequisites
+The process uses **PyInstaller** to bundle the Python application and its dependencies into a single executable file.
 
-Before you can package the application, you will need to have the following software installed:
+---
 
-*   Python 3.6 or later
-*   pip (the Python package installer)
+## 1. Prerequisites
 
-You will also need to install the following Python packages:
+Before you can package the application, you must have the following software installed:
 
-*   `pyinstaller`
-*   `pyqt6`
-*   `sqlalchemy`
-*   `bcrypt`
-*   `reportlab`
-*   `openpyxl`
+*   **Python 3.8+**
+*   **Pip** (the Python package installer)
 
-You can install these packages by running the following command:
+## 2. Installation
 
-```
+Follow these steps to set up your environment:
+
+**A. Install Application Dependencies:**
+
+First, install all the Python packages required by the application. From the root directory of the project, run:
+
+```bash
 pip install -r requirements.txt
+```
+
+**B. Install PyInstaller:**
+
+Next, install PyInstaller, the tool used for packaging:
+
+```bash
 pip install pyinstaller
 ```
 
-## Packaging Instructions
+---
 
-Once you have installed the prerequisites, you can package the application by running the `package.sh` script:
+## 3. Running the Packaging Script
 
-```
+Once you have installed all the prerequisites, you can package the application by running the `package.sh` script from the project's root directory:
+
+```bash
 ./package.sh
 ```
 
-This will create a distributable package in the `dist` directory. The type of package created will depend on your operating system:
+The script will automatically perform the following steps:
+1.  Clean up any previous builds.
+2.  Run PyInstaller to create a single executable file.
+3.  Create a platform-specific distributable archive (`.zip` for Windows, `.dmg` for macOS, `.tar.gz` for Linux).
 
-*   **Windows:** A `.zip` file containing the application executable.
-*   **macOS:** A `.dmg` file containing the application bundle.
-*   **Linux:** A `.tar.gz` file containing the application executable.
+Upon successful completion, you will find the final package in the root directory of the project.
 
-### Windows
+---
 
-On Windows, the `package.sh` script will create a `Ajyad Accountant-windows.zip` file in the `dist` directory. To run the application, simply extract the contents of the zip file and double-click on the `Ajyad Accountant.exe` file.
+## 4. Platform-Specific Instructions
 
-### macOS
+### ❖ Windows
 
-On macOS, the `package.sh` script will create a `Ajyad Accountant-mac.dmg` file in the `dist` directory. To run the application, simply open the `.dmg` file and drag the `Ajyad Accountant.app` bundle to your `Applications` folder.
+*   **Output:** `Ajyad Accountant-windows.zip`
+*   **To Run:**
+    1.  Extract the contents of the zip file.
+    2.  Double-click the `Ajyad Accountant.exe` file to run the application.
 
-### Linux
+### ❖ macOS
 
-On Linux, the `package.sh` script will create a `Ajyad Accountant-linux.tar.gz` file in the `dist` directory. To run the application, simply extract the contents of the `.tar.gz` file and run the `Ajyad Accountant` executable.
+*   **Output:** `Ajyad Accountant-macos.dmg`
+*   **To Run:**
+    1.  Double-click the `.dmg` file to mount it.
+    2.  Drag the `Ajyad Accountant.app` bundle into your `/Applications` folder.
+    3.  Eject the disk image and run the application from your Applications folder.
+
+### ❖ Linux
+
+*   **Output:** `Ajyad Accountant-linux.tar.gz`
+*   **To Run:**
+    1.  Extract the contents of the `.tar.gz` file: `tar -xzvf Ajyad Accountant-linux.tar.gz`
+    2.  Navigate into the `dist` directory.
+    3.  Make the application executable: `chmod +x "Ajyad Accountant"`
+    4.  Run the application: `./"Ajyad Accountant"`
+
+---
+
+## 5. Troubleshooting
+
+*   **"Command not found: pyinstaller"**: This means PyInstaller is not installed or not in your system's PATH. Make sure you have run `pip install pyinstaller`.
+*   **"Permission denied" when running `./package.sh`**: You may need to make the script executable first. Run `chmod +x package.sh`.
+*   **Packaging fails on Windows:** The script uses Python's built-in `zipfile` module and should be reliable. If it fails, ensure your Python installation is correct.
+*   **App fails to start on Linux:** Some Linux distributions may require additional libraries to be installed for PyQt to work correctly (e.g., `libxcb-cursor0`). Check the PyQt documentation for your specific distribution.
