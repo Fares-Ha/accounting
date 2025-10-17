@@ -59,11 +59,8 @@ class ReportingWidget(QWidget):
         self.refresh_pnl_button.clicked.connect(self.generate_pnl_report)
         self.export_pnl_pdf_button = QPushButton(self.tr("Export to PDF"))
         self.export_pnl_pdf_button.clicked.connect(self.export_pnl_to_pdf)
-        self.export_pnl_excel_button = QPushButton(self.tr("Export to Excel"))
-        self.export_pnl_excel_button.clicked.connect(self.export_pnl_to_excel)
         button_layout.addWidget(self.refresh_pnl_button)
         button_layout.addWidget(self.export_pnl_pdf_button)
-        button_layout.addWidget(self.export_pnl_excel_button)
         layout.addLayout(button_layout)
 
         self.pnl_table = QTableWidget()
@@ -99,20 +96,6 @@ class ReportingWidget(QWidget):
             try:
                 self.export_service.export_pnl_report_to_pdf(report_data, start_date, end_date, file_path)
                 QMessageBox.information(self, self.tr("Export Successful"), self.tr("Profit & Loss report exported to PDF successfully."))
-            except Exception as e:
-                QMessageBox.critical(self, self.tr("Export Error"), self.tr(f"Could not export report: {e}"))
-
-    def export_pnl_to_excel(self):
-        start_date = self.pnl_start_date_edit.dateTime().toPyDateTime()
-        end_date = self.pnl_end_date_edit.dateTime().toPyDateTime()
-        with get_db() as db:
-            report_data = self.reporting_service.get_profit_and_loss_statement(db, start_date, end_date)
-
-        file_path, _ = QFileDialog.getSaveFileName(self, self.tr("Save Excel"), "", "Excel Files (*.xlsx)")
-        if file_path:
-            try:
-                self.export_service.export_pnl_report_to_excel(report_data, start_date, end_date, file_path)
-                QMessageBox.information(self, self.tr("Export Successful"), self.tr("Profit & Loss report exported to Excel successfully."))
             except Exception as e:
                 QMessageBox.critical(self, self.tr("Export Error"), self.tr(f"Could not export report: {e}"))
 

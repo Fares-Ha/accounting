@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel, QLineEdit, QMenuBar, QMenu, QMessageBox
 from PyQt6.QtGui import QAction
-from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtCore import QCoreApplication, pyqtSignal
 from ..database.database import get_db
 from ..core import config_service
 from ..core.search_service import global_search
@@ -22,6 +22,8 @@ class MainWindow(QMainWindow):
     """
     The main application window, which appears after successful login.
     """
+    restart_requested = pyqtSignal()
+
     def __init__(self, user_id):
         super().__init__()
 
@@ -132,8 +134,13 @@ class MainWindow(QMainWindow):
         current_lang = config_service.get_setting('language', 'en')
         if current_lang != lang_code:
             config_service.set_setting('language', lang_code)
-            QMessageBox.information(self, self.tr("Language Change"),
-                                    self.tr("The language has been changed. Please restart the application for the changes to take effect."))
+            reply = QMessageBox.question(self, self.tr("Language Change"),
+                                        self.tr("The application needs to restart to apply the language change. Restart now?"),
+                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                        QMessageBox.StandardButton.Yes)
+            if reply == QMessageBox.StandardButton.Yes:
+                self.restart_requested.emit()
+
 
     def execute_search(self):
         """
