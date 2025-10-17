@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication
 from app.ui.login_window import LoginWindow
@@ -25,8 +26,10 @@ def main():
     login_window = LoginWindow()
 
     def handle_restart():
+        # Launch a new instance of the application
+        subprocess.Popen([sys.executable] + sys.argv)
+        # Close the current instance
         QApplication.instance().quit()
-        os.execl(sys.executable, sys.executable, *sys.argv)
 
     def show_main_window(user_id):
         nonlocal main_window
