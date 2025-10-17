@@ -1,6 +1,8 @@
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel, QLineEdit
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel, QLineEdit, QMenuBar, QMenu, QMessageBox
+from PyQt6.QtGui import QAction
 from PyQt6.QtCore import QCoreApplication
 from ..database.database import get_db
+from ..core import config_service
 from ..core.search_service import global_search
 from .search_results_widget import SearchResultsWidget
 from .customer_widget import CustomerWidget
@@ -28,6 +30,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(self.tr("Ajyad Accountant - Logged in as {} ({})").format(self.user.username, self.user.role.value))
         self.setMinimumSize(800, 600)
+
+        self._create_menus()
 
         # Create a central widget and a layout
         central_widget = QWidget()
@@ -107,6 +111,29 @@ class MainWindow(QMainWindow):
         # Connect the search bar signal
         self.search_bar.returnPressed.connect(self.execute_search)
         self.search_results_widget = None
+
+    def _create_menus(self):
+        menu_bar = self.menuBar()
+        # Settings Menu
+        settings_menu = menu_bar.addMenu(self.tr("&Settings"))
+
+        # Language Submenu
+        language_menu = settings_menu.addMenu(self.tr("&Language"))
+
+        english_action = QAction(self.tr("English"), self)
+        english_action.triggered.connect(lambda: self._change_language("en"))
+        language_menu.addAction(english_action)
+
+        arabic_action = QAction(self.tr("Arabic"), self)
+        arabic_action.triggered.connect(lambda: self._change_language("ar"))
+        language_menu.addAction(arabic_action)
+
+    def _change_language(self, lang_code):
+        current_lang = config_service.get_setting('language', 'en')
+        if current_lang != lang_code:
+            config_service.set_setting('language', lang_code)
+            QMessageBox.information(self, self.tr("Language Change"),
+                                    self.tr("The language has been changed. Please restart the application for the changes to take effect."))
 
     def execute_search(self):
         """
