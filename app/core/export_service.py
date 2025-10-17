@@ -105,6 +105,35 @@ class ExportService:
 
         doc.build(story)
 
+    def export_pnl_report_to_excel(self, report_data, start_date, end_date, file_path):
+        """
+        Exports a Profit & Loss report to an Excel file.
+        """
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Profit and Loss"
+
+        sheet.append([f"Profit & Loss Statement"])
+        sheet.append([f"For the period from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"])
+        sheet.append([])
+
+        headers = ["Description", "Amount"]
+        sheet.append(headers)
+
+        data = [
+            ["Total Revenue", report_data['revenue']],
+            ["Total Expenses", report_data['expenses']],
+            ["Net Profit", report_data['net_profit']],
+        ]
+
+        for row_data in data:
+            sheet.append(row_data)
+
+        for i in range(1, 5):
+            sheet.cell(row=i, column=2).number_format = '"$"#,##0.00'
+
+        workbook.save(file_path)
+
     def export_balance_sheet_report_to_pdf(self, report_data, as_of_date, file_path):
         """
         Exports a Balance Sheet report to a PDF file.
