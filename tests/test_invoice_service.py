@@ -34,7 +34,7 @@ class TestInvoiceService(unittest.TestCase):
         sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, [{"product_id": product.id, "quantity": 1}])
 
         # Create an invoice from the sales order
-        invoice = invoice_service.create_invoice_from_sales_order(self.db, sales_order.id)
+        invoice = invoice_service.create_invoice_from_sales_order(self.db, self.user.id, sales_order.id)
 
         self.assertIsNotNone(invoice)
         self.assertEqual(invoice.sales_order_id, sales_order.id)
@@ -47,16 +47,16 @@ class TestInvoiceService(unittest.TestCase):
         product = product_service.create_product(self.db, "Test Product", "A test product", 100, 10)
         sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, [{"product_id": product.id, "quantity": 1}])
 
-        invoice_service.create_invoice_from_sales_order(self.db, sales_order.id)
+        invoice_service.create_invoice_from_sales_order(self.db, self.user.id, sales_order.id)
 
         with self.assertRaises(ValueError):
-            invoice_service.create_invoice_from_sales_order(self.db, sales_order.id)
+            invoice_service.create_invoice_from_sales_order(self.db, self.user.id, sales_order.id)
 
     def test_update_invoice_status(self):
         customer = customer_service.create_customer(self.db, "Test Customer", "test@example.com", "1234567890", "123 Test St")
         product = product_service.create_product(self.db, "Test Product", "A test product", 100, 10)
         sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, [{"product_id": product.id, "quantity": 1}])
-        invoice = invoice_service.create_invoice_from_sales_order(self.db, sales_order.id)
+        invoice = invoice_service.create_invoice_from_sales_order(self.db, self.user.id, sales_order.id)
 
         updated_invoice = invoice_service.update_invoice_status(self.db, invoice.id, models.InvoiceStatus.PAID)
 

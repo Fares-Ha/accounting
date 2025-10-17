@@ -3,11 +3,12 @@ from ..database import models
 from . import accounting_service, sales_service
 from datetime import datetime
 
-def create_invoice_from_sales_order(db: Session, sales_order_id: int):
+def create_invoice_from_sales_order(db: Session, user_id: int, sales_order_id: int):
     """
     Creates an invoice for a given sales order.
     """
-    sales_order = sales_service.get_sales_order(db, sales_order_id)
+    # The user_id is passed to satisfy the RBAC decorator on get_sales_order
+    sales_order = sales_service.get_sales_order(db, user_id=user_id, order_id=sales_order_id)
     if not sales_order:
         raise ValueError("Sales order not found")
     if sales_order.invoice:
