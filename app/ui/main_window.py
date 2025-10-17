@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel, QLineEdit
 from PyQt6.QtCore import QCoreApplication
-from ..database.database import get_db
+from ..database.session import get_db
 from ..core.search_service import global_search
 from .search_results_widget import SearchResultsWidget
 from .customer_widget import CustomerWidget
