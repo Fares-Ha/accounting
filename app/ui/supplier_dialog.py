@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QPushButton, QFormLayout, QLabel, QHBoxLayout
 from PyQt6.QtCore import QCoreApplication
-from app.core.supplier_service import create_supplier, update_supplier, get_db
+from app.core.supplier_service import SupplierService
+from app.database.database import get_db
 
 class SupplierDialog(QDialog):
     """
@@ -10,6 +11,8 @@ class SupplierDialog(QDialog):
         super().__init__(parent)
 
         self.supplier = supplier
+        self.supplier_service = SupplierService()
+
         if self.supplier:
             self.setWindowTitle(self.tr("Edit Supplier"))
         else:
@@ -54,14 +57,10 @@ class SupplierDialog(QDialog):
         phone = self.phone_input.text()
         address = self.address_input.text()
 
-        db_gen = get_db()
-        db = next(db_gen)
-        try:
+        with get_db() as db:
             if self.supplier:
-                update_supplier(db, self.supplier.id, name, email, phone, address)
+                self.supplier_service.update_supplier(db, self.supplier.id, name, email, phone, address)
             else:
-                create_supplier(db, name, email, phone, address)
-        finally:
-            next(db_gen, None)
+                self.supplier_service.create_supplier(db, name, email, phone, address)
 
         self.accept()
