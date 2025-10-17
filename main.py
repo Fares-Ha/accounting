@@ -1,6 +1,7 @@
 import sys
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
+from app.database.database import init_db
 from app.ui.login_window import LoginWindow
 from app.ui.main_window import MainWindow
 from app.i18n import set_language, install_translator
@@ -27,14 +28,15 @@ class Application(QApplication):
         super().__init__(argv)
         self.main_window = None
 
-    def show_main_window(self, user_id):
-        self.main_window = MainWindow(user_id)
+    def show_main_window(self, user):
+        self.main_window = MainWindow(user)
         self.main_window.show()
 
 def main():
     """
     Main function to run the application.
     """
+    init_db()  # Ensure the database is initialized
     app = Application(sys.argv)
 
     lang_dialog = LanguageSelectionDialog()
