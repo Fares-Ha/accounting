@@ -7,9 +7,25 @@ from .security import requires_roles, NotAuthorizedError
 audit_service = AuditService()
 
 @requires_roles(models.UserRole.ADMIN, models.UserRole.SALES)
-def create_sales_order(db: Session, user_id: int, customer_id: int, warehouse_id: int, items: list[dict]) -> models.SalesOrder:
+def create_sales_order(db: Session, user_id: int, customer_id: int, items: list[dict]) -> models.SalesOrder:
     """
-    Creates a new sales order, validates input, and updates product stock from a specific warehouse.
+    Creates a new sales order, validates input, and updates product stock.
+
+    - Only ADMIN and SALES users can create sales orders.
+    - Validates customer existence and item quantities.
+    - Creates an audit log and a corresponding journal entry.
+
+    Args:
+        db (Session): The database session.
+        user_id (int): The ID of the user creating the order.
+        customer_id (int): The ID of the customer.
+        items (list[dict]): A list of dicts, each with 'product_id' and 'quantity'.
+
+    Returns:
+        models.SalesOrder: The newly created sales order object.
+
+    Raises:
+        ValueError: If customer is not found, product is out of stock, or quantity is invalid.
     """
     # 1. Validate input
     if not customer_service.get_customer_by_id(db, customer_id):
@@ -22,16 +38,15 @@ def create_sales_order(db: Session, user_id: int, customer_id: int, warehouse_id
     order_items = []
 
     for item in items:
+        # Validate quantity
         quantity = item.get('quantity')
         if not isinstance(quantity, int) or quantity <= 0:
             raise ValueError(f"Invalid quantity for product ID {item.get('product_id')}: must be a positive integer.")
 
-        stock_level = product_service.get_stock_level(db, item['product_id'], warehouse_id)
-        if stock_level < quantity:
-            product = product_service.get_product(db, item['product_id'])
-            raise ValueError(f"Not enough stock for product '{product.name}' in warehouse #{warehouse_id}.")
-
         product = product_service.get_product(db, item['product_id'])
+        if not product or product.stock_quantity < quantity:
+            raise ValueError(f"Not enough stock for product ID {item['product_id']}.")
+
         price_per_unit = product.price
         total_amount += price_per_unit * quantity
         order_items.append(models.SalesOrderItem(
@@ -41,7 +56,7 @@ def create_sales_order(db: Session, user_id: int, customer_id: int, warehouse_id
         ))
 
         # 2. Decrease stock
-        product_service.adjust_stock_level(db, item['product_id'], warehouse_id, -quantity, models.InventoryMovementReason.SALE, user_id)
+        product.stock_quantity -= quantity
 
     # 3. Create the order
     db_order = models.SalesOrder(
@@ -50,12 +65,13 @@ def create_sales_order(db: Session, user_id: int, customer_id: int, warehouse_id
         items=order_items
     )
     db.add(db_order)
-    db.flush()
+    db.flush()  # Flush to get the order ID for the audit log and journal entry
 
     # 4. Create Journal Entry
     try:
         accounts_receivable = db.query(models.Account).filter(models.Account.name == "Accounts Receivable").one()
         sales_revenue = db.query(models.Account).filter(models.Account.name == "Sales Revenue").one()
+
         accounting_service.create_journal_entry(
             db,
             description=f"Sale for order #{db_order.id}",
@@ -65,15 +81,16 @@ def create_sales_order(db: Session, user_id: int, customer_id: int, warehouse_id
             ]
         )
     except Exception as e:
+        # If accounting fails, roll back the transaction to ensure data consistency.
         db.rollback()
-        raise ConnectionError(f"Failed to create journal entry for sale. Reason: {e}")
+        raise ConnectionError(f"Failed to create journal entry for sale, rolling back transaction. Reason: {e}")
 
     # 5. Create Audit Log
     audit_service.create_audit_log(
         db,
         user_id=user_id,
         action="CREATE_SALES_ORDER",
-        details=f"Sales order #{db_order.id} created for customer #{customer_id} from warehouse #{warehouse_id}"
+        details=f"Sales order #{db_order.id} created for customer #{customer_id}"
     )
 
     db.commit()
@@ -100,12 +117,11 @@ def delete_sales_order(db: Session, user_id: int, order_id: int):
     if not order:
         raise ValueError(f"Sales order with ID {order_id} not found.")
 
-    # This function needs to know the original warehouse to restore stock.
-    # For now, we'll assume it's the first warehouse, but this should be improved later.
-    # A better solution would be to store the warehouse_id on the sales_order.
-    warehouse_id = 1
+    # Restore stock for each item in the order
     for item in order.items:
-        product_service.adjust_stock_level(db, item.product_id, warehouse_id, item.quantity, models.InventoryMovementReason.MANUAL_UPDATE, user_id)
+        product = product_service.get_product(db, item.product_id)
+        if product:
+            product.stock_quantity += item.quantity
 
     audit_service.create_audit_log(
         db,
@@ -119,11 +135,10 @@ def delete_sales_order(db: Session, user_id: int, order_id: int):
     return {"message": "Sales order deleted successfully."}
 
 @requires_roles(models.UserRole.ADMIN, models.UserRole.SALES)
-def update_sales_order(db: Session, user_id: int, order_id: int, customer_id: int, warehouse_id: int, items: list[dict]):
+def update_sales_order(db: Session, user_id: int, order_id: int, customer_id: int, items: list[dict]):
     """
     Updates an existing sales order.
-    This is a complex operation that involves restoring old stock and deducting new stock.
-    Assumes the warehouse for the original order is the same as the new one.
+    Only ADMIN and SALES users can update orders.
     """
     order = get_sales_order(db, user_id, order_id)
     if not order:
@@ -131,12 +146,11 @@ def update_sales_order(db: Session, user_id: int, order_id: int, customer_id: in
 
     # Restore old stock quantities
     for item in order.items:
-        product_service.adjust_stock_level(db, item.product_id, warehouse_id, item.quantity, models.InventoryMovementReason.MANUAL_UPDATE, user_id)
+        product = product_service.get_product(db, item.product_id)
+        product.stock_quantity += item.quantity
 
-    # Clear old items by deleting them
-    for item in order.items:
-        db.delete(item)
-    db.flush()
+    # Clear old items
+    order.items = []
 
     # Process new items with validation
     total_amount = 0
@@ -146,13 +160,12 @@ def update_sales_order(db: Session, user_id: int, order_id: int, customer_id: in
         if not isinstance(quantity, int) or quantity <= 0:
             raise ValueError(f"Invalid quantity for product ID {item_data.get('product_id')}: must be a positive integer.")
 
-        stock_level = product_service.get_stock_level(db, item_data['product_id'], warehouse_id)
-        if stock_level < quantity:
-            db.rollback() # Rollback stock changes before raising error
-            product = product_service.get_product(db, item_data['product_id'])
-            raise ValueError(f"Not enough stock for {product.name} in warehouse #{warehouse_id}")
-
         product = product_service.get_product(db, item_data['product_id'])
+        if product.stock_quantity < quantity:
+            db.rollback() # Rollback stock changes before raising error
+            raise ValueError(f"Not enough stock for {product.name}")
+
+        product.stock_quantity -= quantity
         price_per_unit = product.price
         total_amount += price_per_unit * quantity
         order_items.append(models.SalesOrderItem(
@@ -160,8 +173,6 @@ def update_sales_order(db: Session, user_id: int, order_id: int, customer_id: in
             quantity=quantity,
             price_per_unit=price_per_unit
         ))
-
-        product_service.adjust_stock_level(db, item_data['product_id'], warehouse_id, -quantity, models.InventoryMovementReason.SALE, user_id)
 
     order.customer_id = customer_id
     order.total_amount = total_amount

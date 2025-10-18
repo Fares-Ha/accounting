@@ -39,6 +39,31 @@ def create_user(db: Session, current_user_id: int, username: str, password: str,
 
     return db_user
 
+def create_initial_admin(db: Session, username: str, password: str) -> models.User:
+    """
+    Creates the initial administrator user.
+    This function is intended for command-line setup and does not have security checks.
+    """
+    # Check if an admin already exists
+    if db.query(models.User).filter(models.User.role == models.UserRole.ADMIN).first():
+        raise ValueError("An admin user already exists.")
+
+    hashed_pass = hash_password(password)
+    db_user = models.User(username=username, hashed_password=hashed_pass, role=models.UserRole.ADMIN)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    audit_service.create_audit_log(
+        db,
+        user_id=db_user.id, # Attribute action to the new admin
+        action="CREATE_INITIAL_ADMIN",
+        details=f"Initial admin user '{username}' created via command line."
+    )
+    db.commit()
+
+    return db_user
+
 def authenticate_user(db: Session, username: str, password: str) -> models.User | None:
     """
     Authenticates a user by checking the username and password.
@@ -102,9 +127,6 @@ def delete_user(db: Session, current_user_id: int, user_id: int):
     """
     Deletes a user. Only Admins can delete users.
     """
-    if current_user_id == user_id:
-        raise ValueError("Admins cannot delete their own account.")
-
     db_user = get_user(db, user_id)
     if db_user:
         audit_service.create_audit_log(
