@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabe
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import QCoreApplication, pyqtSignal
 from ..database.database import get_db
-from ..core import config_service
+from ..core import auth
 from ..core.search_service import global_search
 from .search_results_widget import SearchResultsWidget
 from .customer_widget import CustomerWidget
@@ -131,15 +131,22 @@ class MainWindow(QMainWindow):
         language_menu.addAction(arabic_action)
 
     def _change_language(self, lang_code):
-        current_lang = config_service.get_setting('language', 'en')
-        if current_lang != lang_code:
-            config_service.set_setting('language', lang_code)
-            reply = QMessageBox.question(self, self.tr("Language Change"),
-                                        self.tr("The application needs to restart to apply the language change. Restart now?"),
-                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                        QMessageBox.StandardButton.Yes)
-            if reply == QMessageBox.StandardButton.Yes:
-                self.restart_requested.emit()
+        """
+        Updates the user's language preference in the database and prompts for a restart.
+        """
+        if self.user.language != lang_code:
+            try:
+                with get_db() as db:
+                    auth.update_user_language(db, self.user.id, lang_code)
+
+                reply = QMessageBox.question(self, self.tr("Language Change"),
+                                            self.tr("The application needs to restart to apply the language change. Restart now?"),
+                                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                            QMessageBox.StandardButton.Yes)
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.restart_requested.emit()
+            except Exception as e:
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not save language preference: {e}"))
 
 
     def execute_search(self):
