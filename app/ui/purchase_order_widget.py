@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
                              QTableWidgetItem, QHeaderView, QFormLayout, QMessageBox,
-                             QDialog, QComboBox, QSpinBox, QDialogButtonBox, QDoubleSpinBox)
+                             QDialog, QComboBox, QSpinBox, QDialogButtonBox, QDoubleSpinBox, QLabel)
 from app.database.database import get_db
-from app.core import purchase_service, product_service, supplier_service
+from app.core import purchase_service, product_service, supplier_service, warehouse_service
 
 class PurchaseOrderDialog(QDialog):
     def __init__(self, order=None):
@@ -122,6 +122,33 @@ class PurchaseOrderDialog(QDialog):
         }
 
 
+class ReceiveOrderDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Select Warehouse")
+        self.layout = QVBoxLayout(self)
+        self.form_layout = QFormLayout()
+        self.warehouse_combo = QComboBox()
+        self.form_layout.addRow(QLabel("Receive into warehouse:"), self.warehouse_combo)
+        self.layout.addLayout(self.form_layout)
+
+        self.buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        self.layout.addWidget(self.buttons)
+
+        self.load_warehouses()
+
+    def load_warehouses(self):
+        with get_db() as db:
+            warehouses = warehouse_service.get_warehouses(db)
+            for warehouse in warehouses:
+                self.warehouse_combo.addItem(warehouse.name, userData=warehouse.id)
+
+    def get_warehouse_id(self):
+        return self.warehouse_combo.currentData()
+
+
 class PurchaseOrderWidget(QWidget):
     def __init__(self, current_user):
         super().__init__()
@@ -235,14 +262,17 @@ class PurchaseOrderWidget(QWidget):
 
     def receive_order(self, row_num):
         order_id = int(self.table.item(row_num, 0).text())
-        reply = QMessageBox.question(self, self.tr("Confirm Reception"),
-                                     self.tr(f"Are you sure you want to mark order {order_id} as received? This will update stock levels."),
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
-        if reply == QMessageBox.StandardButton.Yes:
+        dialog = ReceiveOrderDialog(self)
+        if dialog.exec():
+            warehouse_id = dialog.get_warehouse_id()
+            if not warehouse_id:
+                QMessageBox.warning(self, "Selection Error", "Please select a warehouse.")
+                return
+
             try:
                 with get_db() as db:
-                    purchase_service.receive_purchase_order(db, user_id=self.current_user.id, order_id=order_id)
+                    purchase_service.receive_purchase_order(db, user_id=self.current_user.id, order_id=order_id, warehouse_id=warehouse_id)
                 self.load_orders()
             except ValueError as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))

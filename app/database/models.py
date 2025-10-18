@@ -61,13 +61,42 @@ class Product(Base):
     name = Column(String, nullable=False, index=True)
     description = Column(String)
     price = Column(Integer, nullable=False)  # Storing price in cents to avoid floating point issues
-    stock_quantity = Column(Integer, nullable=False, default=0)
     low_stock_threshold = Column(Integer, nullable=False, default=0)
     category_id = Column(Integer, ForeignKey("product_categories.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     category = relationship("ProductCategory", back_populates="products")
+    inventory_levels = relationship("InventoryLevel", back_populates="product", cascade="all, delete-orphan")
     inventory_movements = relationship("InventoryMovement", back_populates="product")
+
+
+class Warehouse(Base):
+    """
+    Warehouse model for managing multiple stock locations.
+    """
+    __tablename__ = "warehouses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True, index=True)
+    location = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    inventory_levels = relationship("InventoryLevel", back_populates="warehouse", cascade="all, delete-orphan")
+
+
+class InventoryLevel(Base):
+    """
+    Tracks the stock quantity of a product in a specific warehouse.
+    """
+    __tablename__ = "inventory_levels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
+    quantity = Column(Integer, nullable=False, default=0)
+
+    product = relationship("Product", back_populates="inventory_levels")
+    warehouse = relationship("Warehouse", back_populates="inventory_levels")
 
 
 class InventoryMovementReason(enum.Enum):
@@ -85,11 +114,13 @@ class InventoryMovement(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
     quantity_change = Column(Integer, nullable=False)
     reason = Column(Enum(InventoryMovementReason), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     product = relationship("Product", back_populates="inventory_movements")
+    warehouse = relationship("Warehouse")
 
 
 class Supplier(Base):

@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QTa
 from PyQt6.QtCore import QCoreApplication
 from .sales_order_detail_dialog import SalesOrderDetailDialog
 from ..database.database import get_db
-from ..core import sales_service, customer_service, product_service, export_service
+from ..core import sales_service, customer_service, product_service, export_service, warehouse_service
 from ..database import models
 import sys
 
@@ -14,10 +14,13 @@ class SalesOrderDialog(QDialog):
         self.setWindowTitle(self.tr("Edit Sales Order") if self.order else self.tr("Create Sales Order"))
         self.layout = QFormLayout(self)
         self.customer_combo = QComboBox()
+        self.warehouse_combo = QComboBox()
         self.items = []
 
         self.load_customers()
+        self.load_warehouses()
         self.layout.addRow(self.tr("Customer:"), self.customer_combo)
+        self.layout.addRow(self.tr("Warehouse:"), self.warehouse_combo)
 
         if self.order:
             self.populate_order_data()
@@ -36,6 +39,7 @@ class SalesOrderDialog(QDialog):
 
         self.load_products()
         self.product_combo.currentIndexChanged.connect(self.update_add_item_button_state)
+        self.warehouse_combo.currentIndexChanged.connect(self.load_products)
         self.add_item_button.clicked.connect(self.add_item_to_order)
 
         self.items_table = QTableWidget()
@@ -54,17 +58,31 @@ class SalesOrderDialog(QDialog):
             for customer in customers:
                 self.customer_combo.addItem(customer.name, userData=customer.id)
 
+    def load_warehouses(self):
+        with get_db() as db:
+            warehouses = warehouse_service.get_warehouses(db)
+            for warehouse in warehouses:
+                self.warehouse_combo.addItem(warehouse.name, userData=warehouse.id)
+
     def load_products(self):
+        self.product_combo.clear()
+        warehouse_id = self.warehouse_combo.currentData()
+        if not warehouse_id:
+            return
         with get_db() as db:
             products = product_service.get_products(db)
             for p in products:
-                self.product_combo.addItem(f"{p.name} (Stock: {p.stock_quantity})", userData=p)
+                stock_level = product_service.get_stock_level(db, p.id, warehouse_id)
+                self.product_combo.addItem(f"{p.name} (Stock: {stock_level})", userData=p)
 
     def update_add_item_button_state(self, index):
         product = self.product_combo.itemData(index)
         if product:
-            self.add_item_button.setEnabled(product.stock_quantity > 0)
-            self.quantity_spin.setMaximum(product.stock_quantity)
+            warehouse_id = self.warehouse_combo.currentData()
+            with get_db() as db:
+                stock_level = product_service.get_stock_level(db, product.id, warehouse_id)
+            self.add_item_button.setEnabled(stock_level > 0)
+            self.quantity_spin.setMaximum(stock_level)
 
     def add_item_to_order(self):
         product = self.product_combo.currentData()
@@ -104,6 +122,7 @@ class SalesOrderDialog(QDialog):
     def get_data(self):
         return {
             "customer_id": self.customer_combo.currentData(),
+            "warehouse_id": self.warehouse_combo.currentData(),
             "items": self.items
         }
 
@@ -182,6 +201,9 @@ class SalesWidget(QWidget):
         dialog = SalesOrderDialog(current_user=self.current_user)
         if dialog.exec():
             data = dialog.get_data()
+            if not data['warehouse_id']:
+                QMessageBox.warning(self, self.tr("Input Error"), self.tr("Please select a warehouse."))
+                return
             try:
                 with get_db() as db:
                     sales_service.create_sales_order(db, user_id=self.current_user.id, **data)
@@ -268,6 +290,9 @@ class SalesWidget(QWidget):
         dialog = SalesOrderDialog(current_user=self.current_user, order=order)
         if dialog.exec():
             data = dialog.get_data()
+            if not data['warehouse_id']:
+                QMessageBox.warning(self, self.tr("Input Error"), self.tr("Please select a warehouse."))
+                return
             try:
                 with get_db() as db:
                     sales_service.update_sales_order(db, user_id=self.current_user.id, order_id=order_id, **data)

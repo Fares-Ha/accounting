@@ -113,9 +113,9 @@ def delete_purchase_order(db: Session, order_id: int):
     db.commit()
 
 
-def receive_purchase_order(db: Session, order_id: int):
+def receive_purchase_order(db: Session, user_id: int, order_id: int, warehouse_id: int):
     """
-    Marks a purchase order as 'Received' and updates the stock for each product.
+    Marks a purchase order as 'Received' and updates the stock for each product in the specified warehouse.
     """
     order = get_purchase_order(db, order_id)
     if not order:
@@ -125,9 +125,14 @@ def receive_purchase_order(db: Session, order_id: int):
         raise ValueError("Order has already been received")
 
     for item in order.items:
-        product = product_service.get_product(db, item.product_id)
-        if product:
-            product.stock_quantity += item.quantity
+        product_service.adjust_stock_level(
+            db,
+            product_id=item.product_id,
+            warehouse_id=warehouse_id,
+            quantity_change=item.quantity,
+            reason=models.InventoryMovementReason.PURCHASE,
+            user_id=user_id
+        )
 
     order.status = "Received"
     db.commit()
