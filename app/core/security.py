@@ -19,7 +19,7 @@ def requires_roles(*roles: models.UserRole):
 
     This decorator checks if the user performing the action has one of the
     specified roles. It expects the decorated function to have a `db: Session`
-    and a `user_id: int` in its arguments.
+    and an integer argument for the user ID.
 
     Args:
         *roles: A variable number of UserRole enums that are permitted to
@@ -32,12 +32,25 @@ def requires_roles(*roles: models.UserRole):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Find db session and user_id in the decorated function's arguments
             db = next((arg for arg in args if isinstance(arg, Session)), kwargs.get("db"))
-            user_id = next((arg for arg in args if isinstance(arg, int)), kwargs.get("user_id"))
+
+            # Prioritize 'current_user_id' for admin actions, then 'user_id' for general use.
+            user_id = kwargs.get("current_user_id") or kwargs.get("user_id")
+
+            if user_id is None:
+                # Fallback to positional arguments if no keyword argument is found.
+                # This is less explicit and should be used carefully.
+                found_db = False
+                for arg in args:
+                    if isinstance(arg, Session):
+                        found_db = True
+                        continue
+                    if found_db and isinstance(arg, int):
+                        user_id = arg
+                        break
 
             if db is None or user_id is None:
-                raise ValueError("Decorated function must have 'db: Session' and 'user_id: int' arguments.")
+                raise ValueError("Decorated function must have 'db: Session' and a user ID argument.")
 
             user = db.query(models.User).filter(models.User.id == user_id).first()
 

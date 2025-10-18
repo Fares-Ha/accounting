@@ -2,6 +2,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 from ..database import models
 from .audit_service import AuditService
+from .security import requires_roles
 
 audit_service = AuditService()
 
@@ -17,15 +18,25 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
-def create_user(db: Session, username: str, password: str, role: models.UserRole):
+@requires_roles(models.UserRole.ADMIN)
+def create_user(db: Session, current_user_id: int, username: str, password: str, role: models.UserRole):
     """
-    Creates a new user with a hashed password.
+    Creates a new user with a hashed password. Only Admins can create users.
     """
     hashed_pass = hash_password(password)
     db_user = models.User(username=username, hashed_password=hashed_pass, role=role)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    audit_service.create_audit_log(
+        db,
+        user_id=current_user_id,
+        action="CREATE_USER",
+        details=f"Admin user #{current_user_id} created new user #{db_user.id} with role {role.value}"
+    )
+    db.commit()
+
     return db_user
 
 def authenticate_user(db: Session, username: str, password: str) -> models.User | None:
@@ -51,9 +62,10 @@ def authenticate_user(db: Session, username: str, password: str) -> models.User 
     )
     return user
 
-def get_users(db: Session):
+@requires_roles(models.UserRole.ADMIN)
+def get_users(db: Session, current_user_id: int):
     """
-    Retrieves all users.
+    Retrieves all users. Only Admins can retrieve all users.
     """
     return db.query(models.User).all()
 
@@ -63,9 +75,10 @@ def get_user(db: Session, user_id: int):
     """
     return db.query(models.User).filter(models.User.id == user_id).first()
 
-def update_user(db: Session, user_id: int, username: str, password: str | None, role: models.UserRole):
+@requires_roles(models.UserRole.ADMIN)
+def update_user(db: Session, current_user_id: int, user_id: int, username: str, password: str | None, role: models.UserRole):
     """
-    Updates an existing user.
+    Updates an existing user. Only Admins can update users.
     """
     db_user = get_user(db, user_id)
     if db_user:
@@ -73,16 +86,30 @@ def update_user(db: Session, user_id: int, username: str, password: str | None, 
         if password:
             db_user.hashed_password = hash_password(password)
         db_user.role = role
+
+        audit_service.create_audit_log(
+            db,
+            user_id=current_user_id,
+            action="UPDATE_USER",
+            details=f"Admin user #{current_user_id} updated user #{user_id}"
+        )
         db.commit()
         db.refresh(db_user)
     return db_user
 
-def delete_user(db: Session, user_id: int):
+@requires_roles(models.UserRole.ADMIN)
+def delete_user(db: Session, current_user_id: int, user_id: int):
     """
-    Deletes a user.
+    Deletes a user. Only Admins can delete users.
     """
     db_user = get_user(db, user_id)
     if db_user:
+        audit_service.create_audit_log(
+            db,
+            user_id=current_user_id,
+            action="DELETE_USER",
+            details=f"Admin user #{current_user_id} deleted user #{user_id}"
+        )
         db.delete(db_user)
         db.commit()
     return db_user

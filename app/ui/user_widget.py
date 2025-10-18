@@ -4,8 +4,9 @@ from app.database.database import get_db
 from .user_dialog import UserDialog
 
 class UserWidget(QWidget):
-    def __init__(self):
+    def __init__(self, current_user):
         super().__init__()
+        self.current_user = current_user
         self.init_ui()
         self.load_users()
 
@@ -32,7 +33,7 @@ class UserWidget(QWidget):
 
     def load_users(self):
         with get_db() as db:
-            users = auth.get_users(db)
+            users = auth.get_users(db, current_user_id=self.current_user.id)
             self.table.setRowCount(len(users))
             for row, user in enumerate(users):
                 self.table.setItem(row, 0, QTableWidgetItem(str(user.id)))
@@ -41,7 +42,7 @@ class UserWidget(QWidget):
                 self.table.setItem(row, 3, QTableWidgetItem(user.created_at.strftime("%Y-%m-%d %H:%M:%S")))
 
     def add_user(self):
-        dialog = UserDialog()
+        dialog = UserDialog(current_user_id=self.current_user.id)
         if dialog.exec():
             self.load_users()
 
@@ -51,7 +52,7 @@ class UserWidget(QWidget):
             QMessageBox.warning(self, "Selection Error", "Please select a user to edit.")
             return
         user_id = int(self.table.item(selected_rows[0].row(), 0).text())
-        dialog = UserDialog(user_id=user_id)
+        dialog = UserDialog(current_user_id=self.current_user.id, user_id=user_id)
         if dialog.exec():
             self.load_users()
 
@@ -61,9 +62,14 @@ class UserWidget(QWidget):
             QMessageBox.warning(self, "Selection Error", "Please select a user to delete.")
             return
         user_id = int(self.table.item(selected_rows[0].row(), 0).text())
+
+        if user_id == self.current_user.id:
+            QMessageBox.warning(self, "Action Denied", "You cannot delete your own account.")
+            return
+
         reply = QMessageBox.question(self, "Delete User", "Are you sure you want to delete this user?",
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             with get_db() as db:
-                auth.delete_user(db, user_id)
+                auth.delete_user(db, current_user_id=self.current_user.id, user_id=user_id)
             self.load_users()
