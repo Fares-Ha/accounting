@@ -86,3 +86,14 @@ def delete_user(db: Session, user_id: int):
         db.delete(db_user)
         db.commit()
     return db_user
+
+def update_user_language(db: Session, user_id: int, language: str):
+    """
+    Updates the language preference for a specific user.
+    """
+    db_user = get_user(db, user_id)
+    if db_user:
+        db_user.language = language
+        db.commit()
+        db.refresh(db_user)
+    return db_user
