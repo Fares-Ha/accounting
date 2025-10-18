@@ -131,7 +131,6 @@ class Invoice(Base):
     customer = relationship("Customer", back_populates="invoices")
     order = relationship("SalesOrder", back_populates="invoice")
     items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
-    payments = relationship("Payment", back_populates="invoice")
 
 
 class InvoiceItem(Base):
@@ -196,7 +195,6 @@ class PurchaseOrder(Base):
 
     supplier = relationship("Supplier")
     items = relationship("PurchaseOrderItem", back_populates="order", cascade="all, delete-orphan")
-    payments = relationship("Payment", back_populates="purchase_order")
 
 
 class PurchaseOrderItem(Base):
@@ -313,31 +311,4 @@ class Expense(Base):
 
     category = relationship("ExpenseCategory", back_populates="expenses")
     user = relationship("User")
-    journal_entry = relationship("JournalEntry")
-
-
-class PaymentMethod(enum.Enum):
-    CASH = "cash"
-    BANK_TRANSFER = "bank_transfer"
-    CREDIT_CARD = "credit_card"
-    OTHER = "other"
-
-
-class Payment(Base):
-    """
-    Payment model for tracking payments made or received.
-    """
-    __tablename__ = "payments"
-
-    id = Column(Integer, primary_key=True, index=True)
-    amount = Column(Integer, nullable=False)  # Stored in cents
-    payment_date = Column(DateTime(timezone=True), nullable=False)
-    payment_method = Column(Enum(PaymentMethod), nullable=False)
-    invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=True)
-    purchase_order_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=True)
-    journal_entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    invoice = relationship("Invoice", back_populates="payments")
-    purchase_order = relationship("PurchaseOrder", back_populates="payments")
     journal_entry = relationship("JournalEntry")
