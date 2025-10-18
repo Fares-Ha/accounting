@@ -3,6 +3,8 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTa
                              QDialog, QComboBox, QSpinBox, QDialogButtonBox, QDoubleSpinBox)
 from app.database.database import get_db
 from app.core import purchase_service, product_service, supplier_service
+from app.core.payment_service import PaymentService
+from .payment_dialog import PaymentDialog
 
 class PurchaseOrderDialog(QDialog):
     def __init__(self, order=None):
@@ -129,8 +131,8 @@ class PurchaseOrderWidget(QWidget):
         self.layout = QVBoxLayout(self)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels([self.tr("ID"), self.tr("Supplier"), self.tr("Total Amount"), self.tr("Status"), self.tr("Created At"), self.tr("Actions")])
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels([self.tr("ID"), self.tr("Supplier"), self.tr("Total Amount"), self.tr("Paid Amount"), self.tr("Status"), self.tr("Created At"), self.tr("Actions")])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.layout.addWidget(self.table)
@@ -138,7 +140,10 @@ class PurchaseOrderWidget(QWidget):
         button_layout = QHBoxLayout()
         self.add_button = QPushButton(self.tr("Create Purchase Order"))
         self.add_button.clicked.connect(self.create_order)
+        self.record_payment_button = QPushButton(self.tr("Record Payment"))
+        self.record_payment_button.clicked.connect(self.record_payment)
         button_layout.addWidget(self.add_button)
+        button_layout.addWidget(self.record_payment_button)
         self.layout.addLayout(button_layout)
 
         self.load_orders()
@@ -151,9 +156,11 @@ class PurchaseOrderWidget(QWidget):
                 self.table.insertRow(row_num)
                 self.table.setItem(row_num, 0, QTableWidgetItem(str(order.id)))
                 self.table.setItem(row_num, 1, QTableWidgetItem(order.supplier.name))
-                self.table.setItem(row_num, 2, QTableWidgetItem(f"{order.total_amount:.2f}"))
-                self.table.setItem(row_num, 3, QTableWidgetItem(self.tr(order.status)))
-                self.table.setItem(row_num, 4, QTableWidgetItem(order.created_at.strftime("%Y-%m-%d %H:%M")))
+                self.table.setItem(row_num, 2, QTableWidgetItem(f"{order.total_amount / 100:.2f}"))
+                total_paid = sum(p.amount for p in order.payments)
+                self.table.setItem(row_num, 3, QTableWidgetItem(f"{total_paid / 100:.2f}"))
+                self.table.setItem(row_num, 4, QTableWidgetItem(self.tr(order.status)))
+                self.table.setItem(row_num, 5, QTableWidgetItem(order.created_at.strftime("%Y-%m-%d %H:%M")))
 
                 actions_layout = QHBoxLayout()
                 edit_button = QPushButton(self.tr("Edit"))
@@ -173,7 +180,7 @@ class PurchaseOrderWidget(QWidget):
 
                 actions_widget = QWidget()
                 actions_widget.setLayout(actions_layout)
-                self.table.setCellWidget(row_num, 5, actions_widget)
+                self.table.setCellWidget(row_num, 6, actions_widget)
 
     def create_order(self):
         dialog = PurchaseOrderDialog()
@@ -185,7 +192,7 @@ class PurchaseOrderWidget(QWidget):
                         purchase_service.create_purchase_order(db, user_id=self.current_user.id, **data)
                     self.load_orders()
                 except Exception as e:
-                    QMessageBox.critical(self, self.tr("Error"), self.tr("Could not create purchase order: {e}"))
+                    QMessageBox.critical(self, self.tr("Error"), self.tr(f"Could not create purchase order: {e}"))
             else:
                 QMessageBox.warning(self, self.tr("Input Error"), self.tr("Supplier and items must be specified."))
 
@@ -222,6 +229,34 @@ class PurchaseOrderWidget(QWidget):
                 self.load_orders()
             except ValueError as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))
+
+    def record_payment(self):
+        selected_row = self.table.currentRow()
+        if selected_row < 0:
+            QMessageBox.warning(self, "No Order Selected", "Please select a purchase order to record a payment.")
+            return
+
+        order_id = int(self.table.item(selected_row, 0).text())
+        with get_db() as db:
+            order = purchase_service.get_purchase_order(db, order_id)
+            total_paid = sum(p.amount for p in order.payments)
+            amount_due = order.total_amount - total_paid
+
+        if amount_due <= 0:
+            QMessageBox.information(self, "Order Paid", "This purchase order is already fully paid.")
+            return
+
+        dialog = PaymentDialog(order_id, amount_due, self)
+        if dialog.exec():
+            amount, payment_date, payment_method = dialog.get_payment_details()
+            with get_db() as db:
+                payment_service = PaymentService(db, self.current_user.id)
+                try:
+                    # Assuming payment from a cash account for simplicity
+                    payment_service.record_purchase_payment(order_id, amount, payment_date, payment_method, "Cash")
+                    self.load_orders()
+                except Exception as e:
+                    QMessageBox.critical(self, "Payment Error", f"Could not record payment: {e}")
 
     def select_order(self, order_id):
         """
