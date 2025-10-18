@@ -102,6 +102,9 @@ def delete_user(db: Session, current_user_id: int, user_id: int):
     """
     Deletes a user. Only Admins can delete users.
     """
+    if current_user_id == user_id:
+        raise ValueError("Admins cannot delete their own account.")
+
     db_user = get_user(db, user_id)
     if db_user:
         audit_service.create_audit_log(
