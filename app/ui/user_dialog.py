@@ -4,8 +4,9 @@ from app.database.database import get_db
 from app.database.models import UserRole
 
 class UserDialog(QDialog):
-    def __init__(self, user_id=None):
+    def __init__(self, current_user_id, user_id=None):
         super().__init__()
+        self.current_user_id = current_user_id
         self.user_id = user_id
         self.setWindowTitle(f"{'Edit' if user_id else 'Add'} User")
         self.init_ui()
@@ -45,8 +46,12 @@ class UserDialog(QDialog):
             return
 
         with get_db() as db:
-            if self.user_id:
-                auth.update_user(db, self.user_id, username, password if password else None, role)
-            else:
-                auth.create_user(db, username, password, role)
-        super().accept()
+            try:
+                if self.user_id:
+                    auth.update_user(db, current_user_id=self.current_user_id, user_id=self.user_id, username=username, password=password if password else None, role=role)
+                else:
+                    auth.create_user(db, current_user_id=self.current_user_id, username=username, password=password, role=role)
+                super().accept()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Could not save user: {e}")
+                self.reject()

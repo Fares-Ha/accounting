@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
         # Add the user management widget - Admin only
         if self.user.role == UserRole.ADMIN:
             from .user_widget import UserWidget
-            self.user_widget = UserWidget()
+            self.user_widget = UserWidget(current_user=self.user)
             self.tabs.addTab(self.user_widget, self.tr("Users"))
 
         # Connect the search bar signal
