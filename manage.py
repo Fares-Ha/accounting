@@ -2,7 +2,7 @@ import argparse
 import sys
 from sqlalchemy import inspect
 from app.database.database import SessionLocal, engine
-from app.core.auth import create_user
+from app.core.auth import create_initial_admin
 from app.database.models import UserRole, Base
 
 def is_db_initialized():
@@ -23,8 +23,11 @@ def create_admin(args):
 
     db = SessionLocal()
     try:
-        create_user(db, args.username, args.password, UserRole.ADMIN)
+        create_initial_admin(db, args.username, args.password)
         print(f"Admin user '{args.username}' created successfully.")
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
     finally:
         db.close()
 

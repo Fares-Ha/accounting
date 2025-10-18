@@ -4,11 +4,10 @@ from ..database import models
 from ..database.database import get_db
 
 class StockAdjustmentDialog(QDialog):
-    def __init__(self, product_id, product_name, current_user, warehouse_id):
+    def __init__(self, product_id, product_name, current_user):
         super().__init__()
         self.product_id = product_id
         self.current_user = current_user
-        self.warehouse_id = warehouse_id
         self.product_service = product_service
         self.setWindowTitle(f"Adjust Stock for {product_name}")
         self.init_ui()
@@ -41,5 +40,5 @@ class StockAdjustmentDialog(QDialog):
             return
 
         with get_db() as db:
-            self.product_service.adjust_stock_level(db, self.product_id, self.warehouse_id, quantity_change, reason, self.current_user.id)
+            self.product_service.adjust_stock(db, self.current_user.id, self.product_id, quantity_change, reason)
         super().accept()
