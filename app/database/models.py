@@ -20,6 +20,37 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False)
     language = Column(String, default='en')
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class BillOfMaterials(Base):
+    """
+    Bill of Materials (BOM) model to define the components of a manufactured product.
+    """
+    __tablename__ = "bill_of_materials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, unique=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    product = relationship("Product")
+    items = relationship("BillOfMaterialsItem", back_populates="bom", cascade="all, delete-orphan")
+
+
+class BillOfMaterialsItem(Base):
+    """
+    Represents a single component item within a Bill of Materials.
+    """
+    __tablename__ = "bill_of_materials_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bom_id = Column(Integer, ForeignKey("bill_of_materials.id"), nullable=False)
+    component_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+
+    bom = relationship("BillOfMaterials", back_populates="items")
+    component = relationship("Product", foreign_keys=[component_id])
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 
@@ -312,19 +343,3 @@ class Expense(Base):
     category = relationship("ExpenseCategory", back_populates="expenses")
     user = relationship("User")
     journal_entry = relationship("JournalEntry")
-
-
-class Employee(Base):
-    """
-    Employee model for managing HR information.
-    """
-    __tablename__ = "employees"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    job_title = Column(String, nullable=False)
-    email = Column(String, unique=True, index=True)
-    phone = Column(String)
-    hire_date = Column(DateTime(timezone=True), nullable=False)
-    salary = Column(Integer, nullable=False)  # Stored in cents
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
