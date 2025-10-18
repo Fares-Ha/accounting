@@ -7,8 +7,9 @@ from ..database import models
 import sys
 
 class SalesOrderDialog(QDialog):
-    def __init__(self, order=None):
+    def __init__(self, current_user, order=None):
         super().__init__()
+        self.current_user = current_user
         self.order = order
         self.setWindowTitle(self.tr("Edit Sales Order") if self.order else self.tr("Create Sales Order"))
         self.layout = QFormLayout(self)
@@ -150,39 +151,42 @@ class SalesWidget(QWidget):
 
     def load_orders(self):
         self.table.setRowCount(0)
-        with get_db() as db:
-            orders = sales_service.get_sales_orders(db)
-            for row_num, order in enumerate(orders):
-                self.table.insertRow(row_num)
-                self.table.setItem(row_num, 0, QTableWidgetItem(str(order.id)))
-                self.table.setItem(row_num, 1, QTableWidgetItem(order.customer.name))
-                self.table.setItem(row_num, 2, QTableWidgetItem(str(order.total_amount)))
-                self.table.setItem(row_num, 3, QTableWidgetItem(order.created_at.strftime("%Y-%m-%d")))
+        try:
+            with get_db() as db:
+                orders = sales_service.get_sales_orders(db, user_id=self.current_user.id)
+                for row_num, order in enumerate(orders):
+                    self.table.insertRow(row_num)
+                    self.table.setItem(row_num, 0, QTableWidgetItem(str(order.id)))
+                    self.table.setItem(row_num, 1, QTableWidgetItem(order.customer.name))
+                    self.table.setItem(row_num, 2, QTableWidgetItem(str(order.total_amount)))
+                    self.table.setItem(row_num, 3, QTableWidgetItem(order.created_at.strftime("%Y-%m-%d")))
 
-                actions_layout = QHBoxLayout()
-                edit_button = QPushButton(self.tr("Edit"))
-                edit_button.clicked.connect(lambda _, r=row_num: self.edit_order(r))
-                delete_button = QPushButton(self.tr("Delete"))
-                delete_button.clicked.connect(lambda _, r=row_num: self.delete_order(r))
-                receipt_button = QPushButton(self.tr("Receipt"))
-                receipt_button.clicked.connect(lambda _, r=row_num: self.print_receipt(r))
-                actions_layout.addWidget(edit_button)
-                actions_layout.addWidget(delete_button)
-                actions_layout.addWidget(receipt_button)
+                    actions_layout = QHBoxLayout()
+                    edit_button = QPushButton(self.tr("Edit"))
+                    edit_button.clicked.connect(lambda _, r=row_num: self.edit_order(r))
+                    delete_button = QPushButton(self.tr("Delete"))
+                    delete_button.clicked.connect(lambda _, r=row_num: self.delete_order(r))
+                    receipt_button = QPushButton(self.tr("Receipt"))
+                    receipt_button.clicked.connect(lambda _, r=row_num: self.print_receipt(r))
+                    actions_layout.addWidget(edit_button)
+                    actions_layout.addWidget(delete_button)
+                    actions_layout.addWidget(receipt_button)
 
-                actions_widget = QWidget()
-                actions_widget.setLayout(actions_layout)
-                self.table.setCellWidget(row_num, 4, actions_widget)
+                    actions_widget = QWidget()
+                    actions_widget.setLayout(actions_layout)
+                    self.table.setCellWidget(row_num, 4, actions_widget)
+        except Exception as e:
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Could not load sales orders: {e}"))
 
     def create_order(self):
-        dialog = SalesOrderDialog()
+        dialog = SalesOrderDialog(current_user=self.current_user)
         if dialog.exec():
             data = dialog.get_data()
             try:
                 with get_db() as db:
                     sales_service.create_sales_order(db, user_id=self.current_user.id, **data)
                 self.load_orders()
-            except ValueError as e:
+            except Exception as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))
 
     def select_order(self, order_id):
@@ -198,7 +202,7 @@ class SalesWidget(QWidget):
     def print_receipt(self, row_num):
         order_id = int(self.table.item(row_num, 0).text())
         with get_db() as db:
-            order = sales_service.get_sales_order(db, order_id)
+            order = sales_service.get_sales_order(db, user_id=self.current_user.id, order_id=order_id)
 
         if not order:
             QMessageBox.critical(self, self.tr("Error"), self.tr("Order not found."))
@@ -223,7 +227,7 @@ class SalesWidget(QWidget):
         row_num = model_index.row()
         order_id = int(self.table.item(row_num, 0).text())
         with get_db() as db:
-            order = sales_service.get_sales_order(db, order_id)
+            order = sales_service.get_sales_order(db, user_id=self.current_user.id, order_id=order_id)
 
         if order:
             dialog = SalesOrderDetailDialog(order, self)
@@ -238,9 +242,9 @@ class SalesWidget(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             try:
                 with get_db() as db:
-                    sales_service.delete_sales_order(db, order_id)
+                    sales_service.delete_sales_order(db, user_id=self.current_user.id, order_id=order_id)
                 self.load_orders()
-            except ValueError as e:
+            except Exception as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))
 
     def delete_selected_order(self):
@@ -255,18 +259,18 @@ class SalesWidget(QWidget):
     def edit_order(self, row_num):
         order_id = int(self.table.item(row_num, 0).text())
         with get_db() as db:
-            order = sales_service.get_sales_order(db, order_id)
+            order = sales_service.get_sales_order(db, user_id=self.current_user.id, order_id=order_id)
 
         if not order:
             QMessageBox.critical(self, self.tr("Error"), self.tr("Order not found."))
             return
 
-        dialog = SalesOrderDialog(order=order)
+        dialog = SalesOrderDialog(current_user=self.current_user, order=order)
         if dialog.exec():
             data = dialog.get_data()
             try:
                 with get_db() as db:
-                    sales_service.update_sales_order(db, order_id, **data)
+                    sales_service.update_sales_order(db, user_id=self.current_user.id, order_id=order_id, **data)
                 self.load_orders()
-            except ValueError as e:
+            except Exception as e:
                 QMessageBox.critical(self, self.tr("Error"), str(e))
