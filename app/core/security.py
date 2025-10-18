@@ -57,8 +57,17 @@ def requires_roles(*roles: models.UserRole):
             if not user:
                 raise ValueError(f"User with ID {user_id} not found.")
 
-            if user.role not in roles:
-                raise NotAuthorizedError(f"User role '{user.role.value}' is not authorized. Required roles: {[r.value for r in roles]}")
+            # Convert string roles to enums for comparison
+            required_roles = set()
+            for r in roles:
+                if isinstance(r, str):
+                    required_roles.add(models.UserRole[r.upper()])
+                else:
+                    required_roles.add(r)
+
+            if user.role not in required_roles:
+                role_names = [r.value if isinstance(r, models.UserRole) else r for r in roles]
+                raise NotAuthorizedError(f"User role '{user.role.value}' is not authorized. Required roles: {role_names}")
 
             return func(*args, **kwargs)
         return wrapper

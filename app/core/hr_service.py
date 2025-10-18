@@ -6,7 +6,7 @@ from datetime import datetime
 
 audit_service = AuditService()
 
-@requires_roles('ADMIN')
+@requires_roles(models.UserRole.ADMIN)
 def create_employee(db: Session, user_id: int, name: str, job_title: str, email: str, phone: str, hire_date: datetime, salary: int) -> models.Employee:
     """
     Creates a new employee.
@@ -30,21 +30,21 @@ def create_employee(db: Session, user_id: int, name: str, job_title: str, email:
     )
     return db_employee
 
-@requires_roles('ADMIN')
+@requires_roles(models.UserRole.ADMIN)
 def get_employees(db: Session, user_id: int) -> list[models.Employee]:
     """
     Retrieves all employees.
     """
     return db.query(models.Employee).all()
 
-@requires_roles('ADMIN')
+@requires_roles(models.UserRole.ADMIN)
 def get_employee(db: Session, user_id: int, employee_id: int) -> models.Employee | None:
     """
     Retrieves a single employee by their ID.
     """
     return db.query(models.Employee).filter(models.Employee.id == employee_id).first()
 
-@requires_roles('ADMIN')
+@requires_roles(models.UserRole.ADMIN)
 def update_employee(db: Session, user_id: int, employee_id: int, name: str, job_title: str, email: str, phone: str, hire_date: datetime, salary: int) -> models.Employee:
     """
     Updates an existing employee.
@@ -67,7 +67,7 @@ def update_employee(db: Session, user_id: int, employee_id: int, name: str, job_
         )
     return db_employee
 
-@requires_roles('ADMIN')
+@requires_roles(models.UserRole.ADMIN)
 def delete_employee(db: Session, user_id: int, employee_id: int):
     """
     Deletes an employee.
