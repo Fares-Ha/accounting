@@ -3,6 +3,7 @@ This module provides the NotificationService, which is responsible for generatin
 """
 from sqlalchemy.orm import Session
 from ..database import models
+from . import product_service
 
 class NotificationService:
     """
@@ -13,12 +14,7 @@ class NotificationService:
         """
         Returns a list of products that are below their low stock threshold.
         """
-        low_stock_products = (
-            db.query(models.Product)
-            .filter(models.Product.stock_quantity < models.Product.low_stock_threshold)
-            .all()
-        )
-        return low_stock_products
+        return product_service.get_low_stock_products(db)
 
     def get_overdue_invoices(self, db: Session):
         """

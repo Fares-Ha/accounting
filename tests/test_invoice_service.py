@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.database.database import Base
 from app.database import models
-from app.core import sales_service, invoice_service, product_service, customer_service, accounting_service
+from app.core import sales_service, invoice_service, product_service, customer_service, accounting_service, warehouse_service
 
 class TestInvoiceService(unittest.TestCase):
     def setUp(self):
@@ -16,10 +16,12 @@ class TestInvoiceService(unittest.TestCase):
         accounting_service.create_account(self.db, "Accounts Receivable", models.AccountType.ASSET)
         accounting_service.create_account(self.db, "Sales Revenue", models.AccountType.REVENUE)
 
-        # Create a dummy user
+        # Create a dummy user and warehouse
         self.user = models.User(id=1, username="testuser", hashed_password="password", role=models.UserRole.ADMIN)
         self.db.add(self.user)
         self.db.commit()
+        self.warehouse = warehouse_service.create_warehouse(self.db, self.user.id, "Main Warehouse", "Location")
+
 
     def tearDown(self):
         self.db.close()
@@ -28,10 +30,10 @@ class TestInvoiceService(unittest.TestCase):
     def test_create_invoice_from_sales_order(self):
         # Create a customer and product
         customer = customer_service.create_customer(self.db, "Test Customer", "test@example.com", "1234567890", "123 Test St")
-        product = product_service.create_product(self.db, "Test Product", "A test product", 100, 10)
+        product = product_service.create_product(self.db, "Test Product", "A test product", 100, initial_stock=[{'warehouse_id': self.warehouse.id, 'quantity': 10}])
 
         # Create a sales order
-        sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, [{"product_id": product.id, "quantity": 1}])
+        sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, self.warehouse.id, [{"product_id": product.id, "quantity": 1}])
 
         # Create an invoice from the sales order
         invoice = invoice_service.create_invoice_from_sales_order(self.db, self.user.id, sales_order.id)
@@ -44,8 +46,8 @@ class TestInvoiceService(unittest.TestCase):
 
     def test_cannot_create_duplicate_invoice(self):
         customer = customer_service.create_customer(self.db, "Test Customer", "test@example.com", "1234567890", "123 Test St")
-        product = product_service.create_product(self.db, "Test Product", "A test product", 100, 10)
-        sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, [{"product_id": product.id, "quantity": 1}])
+        product = product_service.create_product(self.db, "Test Product", "A test product", 100, initial_stock=[{'warehouse_id': self.warehouse.id, 'quantity': 10}])
+        sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, self.warehouse.id, [{"product_id": product.id, "quantity": 1}])
 
         invoice_service.create_invoice_from_sales_order(self.db, self.user.id, sales_order.id)
 
@@ -54,8 +56,8 @@ class TestInvoiceService(unittest.TestCase):
 
     def test_update_invoice_status(self):
         customer = customer_service.create_customer(self.db, "Test Customer", "test@example.com", "1234567890", "123 Test St")
-        product = product_service.create_product(self.db, "Test Product", "A test product", 100, 10)
-        sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, [{"product_id": product.id, "quantity": 1}])
+        product = product_service.create_product(self.db, "Test Product", "A test product", 100, initial_stock=[{'warehouse_id': self.warehouse.id, 'quantity': 10}])
+        sales_order = sales_service.create_sales_order(self.db, self.user.id, customer.id, self.warehouse.id, [{"product_id": product.id, "quantity": 1}])
         invoice = invoice_service.create_invoice_from_sales_order(self.db, self.user.id, sales_order.id)
 
         updated_invoice = invoice_service.update_invoice_status(self.db, invoice.id, models.InvoiceStatus.PAID)

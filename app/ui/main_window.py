@@ -65,6 +65,11 @@ class MainWindow(QMainWindow):
         self.category_widget = CategoryWidget()
         self.tabs.addTab(self.category_widget, self.tr("Categories"))
 
+        # Add the warehouse management widget
+        from .warehouse_widget import WarehouseWidget
+        self.warehouse_widget = WarehouseWidget(self.user.id)
+        self.tabs.addTab(self.warehouse_widget, self.tr("Warehouses"))
+
         # Add the sales management widget
         self.sales_widget = SalesWidget(self.user)
         self.tabs.addTab(self.sales_widget, self.tr("Sales"))
