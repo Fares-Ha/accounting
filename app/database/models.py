@@ -312,3 +312,19 @@ class Expense(Base):
     category = relationship("ExpenseCategory", back_populates="expenses")
     user = relationship("User")
     journal_entry = relationship("JournalEntry")
+
+
+class Employee(Base):
+    """
+    Employee model for managing HR information.
+    """
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    job_title = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True)
+    phone = Column(String)
+    hire_date = Column(DateTime(timezone=True), nullable=False)
+    salary = Column(Integer, nullable=False)  # Stored in cents
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

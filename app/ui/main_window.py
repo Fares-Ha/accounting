@@ -110,6 +110,12 @@ class MainWindow(QMainWindow):
             self.user_widget = UserWidget(current_user=self.user)
             self.tabs.addTab(self.user_widget, self.tr("Users"))
 
+        # Add the HR management widget - Admin only
+        if self.user.role == UserRole.ADMIN:
+            from .hr_widget import HRWidget
+            self.hr_widget = HRWidget(self.user.id)
+            self.tabs.addTab(self.hr_widget, self.tr("HR"))
+
         # Connect the search bar signal
         self.search_bar.returnPressed.connect(self.execute_search)
         self.search_results_widget = None
