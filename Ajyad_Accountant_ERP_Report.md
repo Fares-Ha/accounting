@@ -73,6 +73,26 @@ The application is built on a modular architecture, with each module handling a 
 
 The application follows a classic 3-tier architecture, promoting a clean separation of concerns.
 
+```mermaid
+graph TD
+    A[Presentation Layer (UI)<br>PyQt6 Widgets<br>app/ui] --> B{Business Logic Layer<br>Core Services<br>app/core};
+    B --> C[Data Layer<br>SQLAlchemy ORM<br>app/database];
+    C --> D[(Database<br>SQLite)];
+
+    subgraph User Interaction
+        A
+    end
+
+    subgraph Business Rules
+        B
+    end
+
+    subgraph Data Storage
+        C
+        D
+    end
+```
+
 -   **Presentation Layer (Client-Side):**
     -   A desktop graphical user interface (GUI) built with the **PyQt6** framework.
     -   This layer is responsible for all user interaction and is located in the `app/ui` directory.
@@ -89,6 +109,36 @@ The application follows a classic 3-tier architecture, promoting a clean separat
 ---
 
 ## 5. Use Cases
+
+```mermaid
+graph TD
+    subgraph Users
+        Admin((Admin));
+        Sales((Sales Rep));
+        Accountant((Accountant));
+    end
+
+    subgraph System
+        UC1[Manage Sales Orders];
+        UC2[Manage Purchase Orders];
+        UC3[Manage Invoices];
+        UC4[Manage Expenses];
+        UC5[Generate Financial Reports];
+        UC6[Manage User Accounts];
+        UC7[Manage Products & BOMs];
+    end
+
+    Admin --> UC2;
+    Admin --> UC6;
+    Admin --> UC7;
+
+    Sales --> UC1;
+    Sales --> UC3;
+
+    Accountant --> UC3;
+    Accountant --> UC4;
+    Accountant --> UC5;
+```
 
 1.  **Sales Workflow:** A sales representative logs in, and the system restricts their access to sales-related modules. They create a new sales order for a customer, adding several products. Upon saving, the system automatically reduces the stock for those products and creates a balanced journal entry in the accounting ledger.
 2.  **Procurement Workflow:** A manager notices a low stock alert. They create a purchase order for the required items from a registered supplier. When the shipment arrives, they mark the purchase order as "Received," and the system automatically updates the stock quantities.
