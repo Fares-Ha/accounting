@@ -98,7 +98,7 @@ class Product(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     category = relationship("ProductCategory", back_populates="products")
-    inventory_movements = relationship("InventoryMovement", back_populates="product")
+    inventory_movements = relationship("InventoryMovement", back_populates="product", cascade="all, delete-orphan")
 
 
 class InventoryMovementReason(enum.Enum):
