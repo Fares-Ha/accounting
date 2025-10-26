@@ -42,7 +42,8 @@ class SalesOrderDialog(QDialog):
         self.product_combo = DynamicComboBox(
             product_loader,
             ProductDialog,
-            display_func=lambda p: f"{p.name} (Stock: {p.stock_quantity})"
+            display_func=lambda p: f"{p.name} (Stock: {p.stock_quantity})",
+            user=self.current_user
         )
         self.quantity_spin = QSpinBox()
         self.quantity_spin.setRange(1, 9999)

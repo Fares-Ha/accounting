@@ -4,12 +4,13 @@ from PyQt6.QtCore import pyqtSignal, Qt
 class DynamicComboBox(QComboBox):
     new_item_added = pyqtSignal(object)
 
-    def __init__(self, item_loader, item_dialog_class, display_func=None, parent=None):
+    def __init__(self, item_loader, item_dialog_class, display_func=None, user=None, parent=None):
         super().__init__(parent)
         self.setEditable(True)
         self.item_loader = item_loader
         self.item_dialog_class = item_dialog_class
         self.display_func = display_func or (lambda item: item.name)
+        self.user = user
         self.load_items()
 
         self.lineEdit().editingFinished.connect(self.handle_editing_finished)
@@ -35,7 +36,7 @@ class DynamicComboBox(QComboBox):
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                dialog = self.item_dialog_class()
+                dialog = self.item_dialog_class(user=self.user)
                 # Pre-fill the name if the dialog supports it
                 if hasattr(dialog, 'name_input'):
                     dialog.name_input.setText(text)
