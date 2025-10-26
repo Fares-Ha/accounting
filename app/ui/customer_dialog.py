@@ -6,10 +6,11 @@ class CustomerDialog(QDialog):
     """
     Dialog for adding and editing customers.
     """
-    def __init__(self, customer=None, parent=None):
+    def __init__(self, customer=None, user=None, parent=None):
         super().__init__(parent)
 
         self.customer = customer
+        self.user = user
         if self.customer:
             self.setWindowTitle(self.tr("Edit Customer"))
         else:

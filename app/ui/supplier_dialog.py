@@ -7,10 +7,11 @@ class SupplierDialog(QDialog):
     """
     Dialog for adding and editing suppliers.
     """
-    def __init__(self, supplier=None, parent=None):
+    def __init__(self, supplier=None, user=None, parent=None):
         super().__init__(parent)
 
         self.supplier = supplier
+        self.user = user
         self.supplier_service = SupplierService()
 
         if self.supplier:
