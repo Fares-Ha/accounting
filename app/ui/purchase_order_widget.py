@@ -1,6 +1,9 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
                              QTableWidgetItem, QHeaderView, QFormLayout, QMessageBox,
                              QDialog, QComboBox, QSpinBox, QDialogButtonBox, QDoubleSpinBox)
+from .dynamic_combo_box import DynamicComboBox
+from .product_dialog import ProductDialog
+from .supplier_dialog import SupplierDialog
 from app.database.database import get_db
 from app.core import purchase_service, product_service, supplier_service
 
@@ -14,13 +17,22 @@ class PurchaseOrderDialog(QDialog):
         self.layout = QVBoxLayout(self)
         self.form_layout = QFormLayout()
 
-        self.supplier_combo = QComboBox()
+        def supplier_loader():
+            with get_db() as db:
+                return supplier_service.get_all_suppliers(db)
+
+        self.supplier_combo = DynamicComboBox(supplier_loader, SupplierDialog)
         self.form_layout.addRow(self.tr("Supplier:"), self.supplier_combo)
         self.layout.addLayout(self.form_layout)
 
         # Item adding section
         add_item_layout = QHBoxLayout()
-        self.product_combo = QComboBox()
+
+        def product_loader():
+            with get_db() as db:
+                return product_service.get_products(db)
+
+        self.product_combo = DynamicComboBox(product_loader, ProductDialog)
         self.quantity_spinbox = QSpinBox()
         self.quantity_spinbox.setRange(1, 9999)
         self.price_spinbox = QDoubleSpinBox()
@@ -45,25 +57,15 @@ class PurchaseOrderDialog(QDialog):
         self.buttons.rejected.connect(self.reject)
         self.layout.addWidget(self.buttons)
 
-        self.load_suppliers_and_products()
         if self.order:
             self.load_order_data()
 
-    def load_suppliers_and_products(self):
-        with get_db() as db:
-            suppliers = supplier_service.get_all_suppliers(db)
-            for supplier in suppliers:
-                self.supplier_combo.addItem(supplier.name, userData=supplier.id)
-
-            products = product_service.get_products(db)
-            for product in products:
-                self.product_combo.addItem(product.name, userData=product.id)
-
     def load_order_data(self):
         # Set supplier
-        supplier_index = self.supplier_combo.findData(self.order.supplier_id)
-        if supplier_index >= 0:
-            self.supplier_combo.setCurrentIndex(supplier_index)
+        for i in range(self.supplier_combo.count()):
+            if self.supplier_combo.itemData(i).id == self.order.supplier_id:
+                self.supplier_combo.setCurrentIndex(i)
+                break
 
         # Populate items
         self.items = [{

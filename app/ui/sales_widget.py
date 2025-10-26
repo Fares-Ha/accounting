@@ -1,6 +1,9 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox, QDialog, QFormLayout, QComboBox, QSpinBox, QDialogButtonBox, QHBoxLayout
 from PyQt6.QtCore import QCoreApplication
 from .sales_order_detail_dialog import SalesOrderDetailDialog
+from .dynamic_combo_box import DynamicComboBox
+from .customer_dialog import CustomerDialog
+from .product_dialog import ProductDialog
 from ..database.database import get_db
 from ..core import sales_service, customer_service, product_service, export_service
 from ..database import models
@@ -13,12 +16,16 @@ class SalesOrderDialog(QDialog):
         self.order = order
         self.setWindowTitle(self.tr("Edit Sales Order") if self.order else self.tr("Create Sales Order"))
         self.layout = QVBoxLayout(self)  # Changed to QVBoxLayout
-        self.customer_combo = QComboBox()
+
+        def customer_loader():
+            with get_db() as db:
+                return customer_service.get_customers(db)
+
+        self.customer_combo = DynamicComboBox(customer_loader, CustomerDialog)
         self.items = []
 
         # Use a QFormLayout for the customer row
         form_layout = QFormLayout()
-        self.load_customers()
         form_layout.addRow(self.tr("Customer:"), self.customer_combo)
         self.layout.addLayout(form_layout)
 
@@ -27,7 +34,16 @@ class SalesOrderDialog(QDialog):
 
         # Integrated item selection
         self.item_selection_layout = QHBoxLayout()
-        self.product_combo = QComboBox()
+
+        def product_loader():
+            with get_db() as db:
+                return product_service.get_products(db)
+
+        self.product_combo = DynamicComboBox(
+            product_loader,
+            ProductDialog,
+            display_func=lambda p: f"{p.name} (Stock: {p.stock_quantity})"
+        )
         self.quantity_spin = QSpinBox()
         self.quantity_spin.setRange(1, 9999)
         self.add_item_button = QPushButton(self.tr("Add Item"))
@@ -37,7 +53,6 @@ class SalesOrderDialog(QDialog):
         self.item_selection_layout.addWidget(self.add_item_button)
         self.layout.addLayout(self.item_selection_layout)
 
-        self.load_products()
         self.product_combo.currentIndexChanged.connect(self.update_add_item_button_state)
         self.add_item_button.clicked.connect(self.add_item_to_order)
 
@@ -51,20 +66,8 @@ class SalesOrderDialog(QDialog):
         self.buttons.rejected.connect(self.reject)
         self.layout.addWidget(self.buttons)
 
-    def load_customers(self):
-        with get_db() as db:
-            customers = customer_service.get_customers(db)
-            for customer in customers:
-                self.customer_combo.addItem(customer.name, userData=customer.id)
-
-    def load_products(self):
-        with get_db() as db:
-            products = product_service.get_products(db)
-            for p in products:
-                self.product_combo.addItem(f"{p.name} (Stock: {p.stock_quantity})", userData=p)
-
     def update_add_item_button_state(self, index):
-        product = self.product_combo.itemData(index)
+        product = self.product_combo.currentData()
         if product:
             self.add_item_button.setEnabled(product.stock_quantity > 0)
             self.quantity_spin.setMaximum(product.stock_quantity)
@@ -112,9 +115,10 @@ class SalesOrderDialog(QDialog):
 
     def populate_order_data(self):
         # Set customer
-        customer_index = self.customer_combo.findData(self.order.customer_id)
-        if customer_index >= 0:
-            self.customer_combo.setCurrentIndex(customer_index)
+        for i in range(self.customer_combo.count()):
+            if self.customer_combo.itemData(i).id == self.order.customer_id:
+                self.customer_combo.setCurrentIndex(i)
+                break
 
         # Populate items table
         for item in self.order.items:
