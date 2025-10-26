@@ -8,8 +8,9 @@ from app.database.database import get_db
 from app.core import purchase_service, product_service, supplier_service
 
 class PurchaseOrderDialog(QDialog):
-    def __init__(self, order=None):
+    def __init__(self, current_user, order=None):
         super().__init__()
+        self.current_user = current_user
         self.order = order
         self.items = []
         self.setWindowTitle(self.tr("Edit Purchase Order") if self.order else self.tr("Create Purchase Order"))
@@ -32,7 +33,7 @@ class PurchaseOrderDialog(QDialog):
             with get_db() as db:
                 return product_service.get_products(db)
 
-        self.product_combo = DynamicComboBox(product_loader, ProductDialog)
+        self.product_combo = DynamicComboBox(product_loader, ProductDialog, user=self.current_user)
         self.quantity_spinbox = QSpinBox()
         self.quantity_spinbox.setRange(1, 9999)
         self.price_spinbox = QDoubleSpinBox()
@@ -178,7 +179,7 @@ class PurchaseOrderWidget(QWidget):
                 self.table.setCellWidget(row_num, 5, actions_widget)
 
     def create_order(self):
-        dialog = PurchaseOrderDialog()
+        dialog = PurchaseOrderDialog(self.current_user)
         if dialog.exec():
             data = dialog.get_data()
             if data:
@@ -200,7 +201,7 @@ class PurchaseOrderWidget(QWidget):
             QMessageBox.critical(self, self.tr("Error"), self.tr("Purchase order not found."))
             return
 
-        dialog = PurchaseOrderDialog(order=order)
+        dialog = PurchaseOrderDialog(self.current_user, order=order)
         if dialog.exec():
             data = dialog.get_data()
             if data:

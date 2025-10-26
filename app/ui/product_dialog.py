@@ -3,21 +3,24 @@ from app.core import product_service
 from app.database.database import get_db
 
 class ProductDialog(QDialog):
-    def __init__(self, product=None, parent=None):
+    def __init__(self, product=None, user=None, parent=None):
         super().__init__(parent)
         self.product = product
+        self.user = user
         self.setWindowTitle("Edit Product" if self.product else "Add Product")
 
         layout = QVBoxLayout(self)
         form_layout = QFormLayout()
 
         self.name_input = QLineEdit(self.product.name if self.product else "")
+        self.description_input = QLineEdit(self.product.description if self.product else "")
         self.price_input = QDoubleSpinBox()
         self.price_input.setRange(0.0, 999999.99)
         if self.product:
             self.price_input.setValue(self.product.price)
 
         form_layout.addRow(QLabel("Name:"), self.name_input)
+        form_layout.addRow(QLabel("Description:"), self.description_input)
         form_layout.addRow(QLabel("Price:"), self.price_input)
 
         layout.addLayout(form_layout)
@@ -37,13 +40,14 @@ class ProductDialog(QDialog):
 
     def save_product(self):
         name = self.name_input.text()
-        price = self.price_input.value()
+        description = self.description_input.text()
+        price = int(self.price_input.value() * 100)
 
         with get_db() as db:
             if self.product:
-                product_service.update_product(db, self.product.id, name=name, price=price)
+                product_service.update_product(db, self.user.id, self.product.id, name=name, description=description, price=price, stock_quantity=self.product.stock_quantity)
             else:
-                product_service.create_product(db, name=name, price=price, stock_quantity=0)
+                product_service.create_product(db, name=name, description=description, price=price, stock_quantity=0)
 
         self.accept()
 
