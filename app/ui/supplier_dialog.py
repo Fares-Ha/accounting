@@ -64,3 +64,6 @@ class SupplierDialog(QDialog):
                 self.supplier_service.create_supplier(db, name, email, phone, address)
 
         self.accept()
+
+    def get_new_item_name(self):
+        return self.name_input.text()

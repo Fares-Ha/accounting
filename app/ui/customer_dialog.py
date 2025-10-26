@@ -65,3 +65,6 @@ class CustomerDialog(QDialog):
             next(db_gen, None)
 
         self.accept()
+
+    def get_new_item_name(self):
+        return self.name_input.text()
