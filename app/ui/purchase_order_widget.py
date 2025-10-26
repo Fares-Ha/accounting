@@ -117,10 +117,11 @@ class PurchaseOrderDialog(QDialog):
                 self.items_table.setCellWidget(row_num, 3, remove_button)
 
     def get_data(self):
-        if not self.supplier_combo.currentData() or not self.items:
+        supplier = self.supplier_combo.currentData()
+        if not supplier or not self.items:
             return None
         return {
-            "supplier_id": self.supplier_combo.currentData(),
+            "supplier_id": supplier.id if supplier else None,
             "items": self.items
         }
 

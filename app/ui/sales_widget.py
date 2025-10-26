@@ -109,8 +109,9 @@ class SalesOrderDialog(QDialog):
 
 
     def get_data(self):
+        customer = self.customer_combo.currentData()
         return {
-            "customer_id": self.customer_combo.currentData(),
+            "customer_id": customer.id if customer else None,
             "items": self.items
         }
 
