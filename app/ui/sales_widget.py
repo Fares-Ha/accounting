@@ -12,12 +12,15 @@ class SalesOrderDialog(QDialog):
         self.current_user = current_user
         self.order = order
         self.setWindowTitle(self.tr("Edit Sales Order") if self.order else self.tr("Create Sales Order"))
-        self.layout = QFormLayout(self)
+        self.layout = QVBoxLayout(self)  # Changed to QVBoxLayout
         self.customer_combo = QComboBox()
         self.items = []
 
+        # Use a QFormLayout for the customer row
+        form_layout = QFormLayout()
         self.load_customers()
-        self.layout.addRow(self.tr("Customer:"), self.customer_combo)
+        form_layout.addRow(self.tr("Customer:"), self.customer_combo)
+        self.layout.addLayout(form_layout)
 
         if self.order:
             self.populate_order_data()
