@@ -3,8 +3,9 @@ from ..core import invoice_service, sales_service
 from ..database.database import get_db
 
 class InvoiceWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, user, parent=None):
         super().__init__(parent)
+        self.user = user
         self.layout = QVBoxLayout(self)
 
         self.create_invoice_button = QPushButton("Create Invoice from Sales Order")
@@ -40,14 +41,14 @@ class InvoiceWidget(QWidget):
         # In a real application, this would involve a dialog to select a sales order
         # For simplicity, we'll just try to create an invoice for the latest sales order
         with get_db() as db:
-            sales_orders = sales_service.get_sales_orders(db)
+            sales_orders = sales_service.get_sales_orders(db, user_id=self.user.id)
             if not sales_orders:
                 QMessageBox.warning(self, "No Sales Orders", "There are no sales orders to create an invoice from.")
                 return
 
             latest_order = sales_orders[-1]
             try:
-                invoice_service.create_invoice_from_sales_order(db, latest_order.id)
+                invoice_service.create_invoice_from_sales_order(db, self.user.id, latest_order.id)
                 self.refresh_invoices()
             except ValueError as e:
                 QMessageBox.warning(self, "Creation Failed", str(e))
