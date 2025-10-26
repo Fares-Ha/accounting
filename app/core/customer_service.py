@@ -25,7 +25,7 @@ def create_customer(db: Session, name: str, email: str, phone: str, address: str
     """
     Create a new customer in the database.
     """
-    new_customer = Customer(name=name, email=email, phone=phone, address=address)
+    new_customer = Customer(name=name, email=email or None, phone=phone, address=address)
     db.add(new_customer)
     db.commit()
     db.refresh(new_customer)
@@ -38,7 +38,7 @@ def update_customer(db: Session, customer_id: int, name: str, email: str, phone:
     customer = db.query(Customer).filter(Customer.id == customer_id).first()
     if customer:
         customer.name = name
-        customer.email = email
+        customer.email = email or None
         customer.phone = phone
         customer.address = address
         db.commit()
