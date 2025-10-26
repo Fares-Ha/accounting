@@ -3,7 +3,20 @@ import sys
 from sqlalchemy import inspect
 from app.database.database import SessionLocal, engine
 from app.core.auth import create_initial_admin
-from app.database.models import UserRole, Base
+from app.core import accounting_service
+from app.database.models import UserRole, Base, AccountType
+
+def seed_default_accounts(db):
+    """Seeds the database with default accounts if they don't exist."""
+    default_accounts = [
+        {"name": "Accounts Receivable", "type": AccountType.ASSET},
+        {"name": "Sales Revenue", "type": AccountType.REVENUE},
+        {"name": "Cash", "type": AccountType.ASSET},
+    ]
+    for acc in default_accounts:
+        if not accounting_service.get_account_by_name(db, acc["name"]):
+            accounting_service.create_account(db, acc["name"], acc["type"])
+            print(f"Created default account: {acc['name']}")
 
 def is_db_initialized():
     """Checks if the database has been initialized by checking for the 'users' table."""
@@ -11,9 +24,14 @@ def is_db_initialized():
     return inspector.has_table("users")
 
 def init_db(args):
-    """Initializes the database and creates tables."""
+    """Initializes the database, creates tables, and seeds default accounts."""
     Base.metadata.create_all(bind=engine)
-    print("Database initialized successfully.")
+    print("Database tables created successfully.")
+    db = SessionLocal()
+    try:
+        seed_default_accounts(db)
+    finally:
+        db.close()
 
 def create_admin(args):
     """Creates a new admin user."""

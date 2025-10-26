@@ -54,9 +54,22 @@ def get_accounts(db: Session) -> list[models.Account]:
     """
     return db.query(models.Account).order_by(models.Account.name).all()
 
+def get_account_by_name(db: Session, name: str) -> models.Account | None:
+    """
+    Retrieves a single account by its name.
+
+    Args:
+        db (Session): The database session.
+        name (str): The name of the account to retrieve.
+
+    Returns:
+        models.Account | None: The found account object, or None if not found.
+    """
+    return db.query(models.Account).filter(models.Account.name == name).first()
+
 def get_journal_entry(db: Session, entry_id: int) -> models.JournalEntry | None:
     """
-    Retrieves a single journal entry by its ID, including its transactions.
+    Retrieries a single journal entry by its ID, including its transactions.
 
     Args:
         db (Session): The database session.
