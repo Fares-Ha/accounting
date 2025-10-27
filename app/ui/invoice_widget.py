@@ -1,5 +1,5 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QComboBox, QMessageBox
-from ..core import invoice_service, sales_service
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QComboBox, QMessageBox, QHBoxLayout
+from ..core import invoice_service, sales_service, export_service
 from ..database.database import get_db
 
 class InvoiceWidget(QWidget):
@@ -13,8 +13,8 @@ class InvoiceWidget(QWidget):
         self.layout.addWidget(self.create_invoice_button)
 
         self.invoice_table = QTableWidget()
-        self.invoice_table.setColumnCount(5)
-        self.invoice_table.setHorizontalHeaderLabels(["ID", "Sales Order ID", "Customer", "Total", "Status"])
+        self.invoice_table.setColumnCount(6)
+        self.invoice_table.setHorizontalHeaderLabels(["ID", "Sales Order ID", "Customer", "Total", "Status", "Actions"])
         self.layout.addWidget(self.invoice_table)
 
         self.refresh_invoices()
@@ -36,6 +36,25 @@ class InvoiceWidget(QWidget):
                 status_combo.setCurrentText(invoice.status.name)
                 status_combo.currentTextChanged.connect(lambda text, inv_id=invoice.id: self.update_status(inv_id, text))
                 self.invoice_table.setCellWidget(row, 4, status_combo)
+
+                print_button = QPushButton("Print")
+                print_button.clicked.connect(lambda _, inv_id=invoice.id: self.print_invoice(inv_id))
+
+                actions_layout = QHBoxLayout()
+                actions_layout.addWidget(print_button)
+                actions_widget = QWidget()
+                actions_widget.setLayout(actions_layout)
+                self.invoice_table.setCellWidget(row, 5, actions_widget)
+
+    def print_invoice(self, invoice_id):
+        with get_db() as db:
+            invoice = invoice_service.get_invoice(db, invoice_id)
+            if invoice:
+                try:
+                    filepath = export_service.generate_invoice_pdf(invoice)
+                    QMessageBox.information(self, "Invoice Printed", f"Invoice saved to {filepath}")
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Could not print invoice: {e}")
 
     def create_invoice(self):
         # In a real application, this would involve a dialog to select a sales order

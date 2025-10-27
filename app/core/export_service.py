@@ -65,6 +65,64 @@ def generate_sales_receipt_pdf(order: models.SalesOrder):
     return os.path.abspath(filepath)
 
 
+def generate_invoice_pdf(invoice: models.Invoice):
+    """
+    Generates a PDF for a given invoice.
+    """
+    # Create an 'invoices' directory if it doesn't exist
+    if not os.path.exists('invoices'):
+        os.makedirs('invoices')
+
+    filepath = f"invoices/invoice_{invoice.id}.pdf"
+    doc = SimpleDocTemplate(filepath, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Title
+    story.append(Paragraph("Invoice", styles['Title']))
+    story.append(Spacer(1, 12))
+
+    # Invoice Info
+    story.append(Paragraph(f"<b>Invoice ID:</b> {invoice.id}", styles['Normal']))
+    story.append(Paragraph(f"<b>Customer:</b> {invoice.customer.name}", styles['Normal']))
+    story.append(Paragraph(f"<b>Date:</b> {invoice.created_at.strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    story.append(Paragraph(f"<b>Status:</b> {invoice.status.value}", styles['Normal']))
+    story.append(Spacer(1, 12))
+
+    # Items Table
+    data = [["Product", "Quantity", "Unit Price", "Total"]]
+    for item in invoice.items:
+        total_price = item.quantity * item.price_per_unit
+        data.append([
+            item.product.name,
+            str(item.quantity),
+            f"{item.price_per_unit / 100:.2f}",
+            f"{total_price / 100:.2f}"
+        ])
+
+    # Add total row
+    data.append(["", "", "<b>Total Amount</b>", f"<b>{invoice.total_amount / 100:.2f}</b>"])
+
+    table = Table(data)
+    style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmok),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -2), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+    ])
+    table.setStyle(style)
+    story.append(table)
+
+    doc.build(story)
+    return os.path.abspath(filepath)
+
+
 class ExportService:
     """
     Service for exporting data to different formats.
