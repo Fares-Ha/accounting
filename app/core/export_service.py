@@ -38,12 +38,12 @@ def generate_sales_receipt_pdf(order: models.SalesOrder):
         data.append([
             item.product.name,
             str(item.quantity),
-            f"{item.price_per_unit:.2f}",
-            f"{total_price:.2f}"
+            f"{item.price_per_unit / 100:.2f}",
+            f"{total_price / 100:.2f}"
         ])
 
     # Add total row
-    data.append(["", "", "<b>Total Amount</b>", f"<b>{order.total_amount:.2f}</b>"])
+    data.append(["", "", "<b>Total Amount</b>", f"<b>{order.total_amount / 100:.2f}</b>"])
 
     table = Table(data)
     style = TableStyle([

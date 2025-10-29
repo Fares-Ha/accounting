@@ -210,27 +210,26 @@ class SalesWidget(QWidget):
 
     def print_receipt(self, row_num):
         order_id = int(self.table.item(row_num, 0).text())
-        with get_db() as db:
-            order = sales_service.get_sales_order(db, user_id=self.current_user.id, order_id=order_id)
-
-        if not order:
-            QMessageBox.critical(self, self.tr("Error"), self.tr("Order not found."))
-            return
-
         try:
-            filepath = export_service.generate_sales_receipt_pdf(order)
-            QMessageBox.information(self, self.tr("Receipt Generated"), self.tr(f"Receipt saved to {filepath}"))
+            with get_db() as db:
+                order = sales_service.get_sales_order(db, user_id=self.current_user.id, order_id=order_id)
+                if not order:
+                    QMessageBox.critical(self, self.tr("Error"), self.tr("Order not found."))
+                    return
+
+                filepath = export_service.generate_sales_receipt_pdf(order)
+                QMessageBox.information(self, self.tr("Receipt Generated"), self.tr(f"Receipt saved to {filepath}"))
+
             # Optional: open the file
             import os
-            if os.name == 'nt': # for Windows
+            if os.name == 'nt':  # for Windows
                 os.startfile(filepath)
-            else: # for macOS and Linux
+            else:  # for macOS and Linux
                 import subprocess
                 opener = "open" if sys.platform == "darwin" else "xdg-open"
                 subprocess.call([opener, filepath])
-
         except Exception as e:
-            QMessageBox.critical(self, self.tr("Error"), self.tr("Could not generate receipt: {e}"))
+            QMessageBox.critical(self, self.tr("Error"), self.tr(f"Could not generate receipt: {e}"))
 
     def view_order_details(self, model_index):
         row_num = model_index.row()
